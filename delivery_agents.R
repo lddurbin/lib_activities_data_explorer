@@ -1,8 +1,22 @@
-delivery_agents <- df %>% 
-  select(1, 40:42, 44:64) %>%
-  select(id, agent_types = 2, external_agent_names = 3, AC_agent_names = 4, unit_names = 21, unit_1_teams = 22, unit_2_teams = 23, unit_3_teams = 24, unit_4_teams = 25, everything()) %>% 
-  pivot_longer(10:length(.), values_to = "library_names", values_drop_na = TRUE) %>% 
+delivery_agents <- df_1 %>% 
+  select(1, 41:43, 45:66) %>%
+  select(
+    id,
+    agent_types = who_delivered_the_session,
+    external_agent_names = for_your_own_records_you_can_provide_further_information_about_the_external_delivery_agent_s_in_the_box_below,
+    AC_agent_names = for_your_own_records_you_can_enter_the_name_of_the_auckland_council_team_s_in_the_box_below,
+    local_board = within_which_local_board_is_the_library_or_community_hub_team_based,
+    unit_names = to_which_unit_would_you_assign_the_employee_s_who_delivered_this_session,
+    unit_1_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_arts_culture_heritage_unit_who_delivered_the_session_in_the_box_below,
+    unit_2_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_community_impact_unit_who_delivered_the_session_in_the_box_below,
+    unit_3_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_libraries_and_learning_unit_who_delivered_the_session_in_the_box_below,
+    unit_4_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_maori_outcomes_unit_who_delivered_the_session_in_the_box_below,
+    everything()) %>% 
+  pivot_longer(11:length(.), values_to = "library_names", values_drop_na = TRUE) %>% 
   mutate(across(c("unit_names", "library_names"), ~str_sub(.x, 2, -2))) %>% 
+  # mutate(library_names = case_when(
+  #   LOCAL BOARDS WITH 1 TEAM ~ paste0(library_names, ",", )
+  # ))
   separate_rows(c("unit_names", "library_names"), sep = ",") %>% 
   mutate(across(c("unit_names", "library_names"), ~str_sub(.x, 2, -2))) %>% 
   mutate(CC_staff_agents = case_when(
