@@ -3,13 +3,6 @@ library("janitor")
 library("readxl")
 library("fs")
 
-process_multichoice <- function(df, selection) {
-  df %>% 
-    mutate(across(selection, ~str_sub(.x, 2, -2))) %>% 
-    separate_rows(selection, sep = ",") %>% 
-    mutate(across(selection, ~str_sub(.x, 2, -2)))
-}
-
 files <- dir_ls("data", regexp = "\\.xlsx$")
 
 # Remove submission time, yes/no questions, morning/afternoon/evening, CC staff type.
