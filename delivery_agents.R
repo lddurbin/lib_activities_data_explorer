@@ -12,24 +12,19 @@ delivery_agents <- df_1 %>%
     unit_3_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_libraries_and_learning_unit_who_delivered_the_session_in_the_box_below,
     unit_4_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_maori_outcomes_unit_who_delivered_the_session_in_the_box_below,
     everything()) %>% 
-  pivot_longer(11:length(.), values_to = "library_names", values_drop_na = TRUE) %>% 
+  pivot_longer(11:length(.), values_to = "library_names") %>% 
+  distinct(id, library_names, .keep_all = TRUE) %>% 
+  add_count(id) %>% 
+  filter(!is.na(library_names) | n == 1) %>% 
   mutate(across(c("unit_names", "library_names"), ~str_sub(.x, 2, -2))) %>% 
   # mutate(library_names = case_when(
   #   LOCAL BOARDS WITH 1 TEAM ~ paste0(library_names, ",", )
   # ))
   separate_rows(c("unit_names", "library_names"), sep = ",") %>% 
   mutate(across(c("unit_names", "library_names"), ~str_sub(.x, 2, -2))) %>% 
-  mutate(CC_staff_agents = case_when(
-    str_detect(agent_types, "Connected Communities staff") == TRUE ~ TRUE,
-    !is.na(agent_types) ~ FALSE
-  ),
-  non_CC_staff_agents = case_when(
-    str_detect(agent_types, "Auckland Council staff") == TRUE ~ TRUE,
-    !is.na(agent_types) ~ FALSE
-  ),
-  external_agents = case_when(
-    str_detect(agent_types, "Anyone not employed by Auckland Council") == TRUE ~ TRUE,
-    !is.na(agent_types) ~ FALSE
-  )
-  ) %>% 
+  mutate(
+    CC_staff_agents = str_detect(agent_types, "Connected Communities staff"),
+    non_CC_staff_agents = str_detect(agent_types, "Auckland Council staff"),
+    external_agents = str_detect(agent_types, "Anyone not employed by Auckland Council")
+    ) %>% 
   select(-c(agent_types, name))
