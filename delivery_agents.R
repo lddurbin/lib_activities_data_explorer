@@ -20,8 +20,8 @@ delivery_agents <- df_1 %>%
   # mutate(library_names = case_when(
   #   LOCAL BOARDS WITH 1 TEAM ~ paste0(library_names, ",", )
   # ))
-  separate_rows(c("unit_names", "library_names"), sep = ",") %>% 
-  mutate(across(c("unit_names", "library_names"), ~str_sub(.x, 2, -2))) %>% 
+  separate_rows(c("unit_names", "library_names"), sep = '","') %>% 
+  mutate(across(c("unit_names", "library_names"), ~str_replace_all(.x, '"', ''))) %>% 
   mutate(
     CC_staff_agents = str_detect(agent_types, "Connected Communities staff"),
     non_CC_staff_agents = str_detect(agent_types, "Auckland Council staff"),
