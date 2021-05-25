@@ -17,13 +17,13 @@ source("delivery_agents.R")
 
 # Online/offline columns, concatenate locations into 1 column
 df_2 <- df_1 %>% 
-  select(-c(40:42, 44:64)) %>%
+  select(-c(41:43, 45:66)) %>%
   mutate(
     in_person = str_detect(how_was_the_session_delivered, "person"),
     online = str_detect(how_was_the_session_delivered, "Online")
     ) %>% 
   unite("location", starts_with("where_in"), na.rm = TRUE, remove = TRUE) %>% 
-  unite("sublocation", starts_with("in_which_"), na.rm = TRUE, remove = TRUE) %>% 
+  unite("sublocation", c(18:20), na.rm = TRUE, remove = TRUE) %>% 
   select(-c("how_was_the_session_delivered"))
 
 df_3 <- df_2 %>% 
