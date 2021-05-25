@@ -24,7 +24,11 @@ df_2 <- df_1 %>%
     ) %>% 
   unite("location", starts_with("where_in"), na.rm = TRUE, remove = TRUE) %>% 
   unite("sublocation", c(18:20), na.rm = TRUE, remove = TRUE) %>% 
-  select(-c("how_was_the_session_delivered"))
+  unite("delivery_time", starts_with("at_what_time"), na.rm = TRUE) %>% 
+  select(-c("how_was_the_session_delivered", starts_with("at_what_time")))
 
 df_3 <- df_2 %>% 
   left_join(delivery_agents, by = "id")
+
+df_4 <- df_3 %>% 
+  mutate(delivery_datetime = parse_date_time(paste(when_was_the_session_delivered, delivery_time), c("Ymd HMp", "Ymd Hp")))
