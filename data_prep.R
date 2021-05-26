@@ -4,6 +4,8 @@ library("readxl")
 library("fs")
 library("lubridate")
 
+source("functions.R")
+
 files <- dir_ls("data", regexp = "\\.xlsx$")
 
 # Remove submission time, yes/no questions, morning/afternoon/evening, CC staff type.
@@ -13,22 +15,28 @@ df_1 <- files %>%
   clean_names() %>% 
   mutate(id = as.character(id))
 
-source("delivery_agents.R")
-
 # Online/offline columns, concatenate locations into 1 column
 df_2 <- df_1 %>% 
   select(-c(41:43, 45:66)) %>%
   mutate(
     in_person = str_detect(how_was_the_session_delivered, "person"),
-    online = str_detect(how_was_the_session_delivered, "Online")
+    online = str_detect(how_was_the_session_delivered, "Online"),
+    .keep = "unused"
     ) %>% 
   unite("location", starts_with("where_in"), na.rm = TRUE, remove = TRUE) %>% 
-  unite("sublocation", c(18:20), na.rm = TRUE, remove = TRUE) %>% 
-  unite("delivery_time", starts_with("at_what_time"), na.rm = TRUE) %>% 
-  select(-c("how_was_the_session_delivered", starts_with("at_what_time")))
+  unite("sublocation", c(17:19), na.rm = TRUE, remove = TRUE) %>% 
+  unite("delivery_time", starts_with("at_what_time"), na.rm = TRUE, remove = TRUE)
 
 df_3 <- df_2 %>% 
-  left_join(delivery_agents, by = "id")
+  mutate(delivery_datetime = parse_date_time(paste(when_was_the_session_delivered, delivery_time), c("Ymd HMp", "Ymd Hp")), .keep = "unused")
 
-df_4 <- df_3 %>% 
-  mutate(delivery_datetime = parse_date_time(paste(when_was_the_session_delivered, delivery_time), c("Ymd HMp", "Ymd Hp")))
+source("delivery_agents.R")
+
+age_groups <- multichoice_splitting(df_1, what_was_the_target_age_group_for_this_session, age_group)
+
+target_groups <- multichoice_splitting(df_1, which_of_these_groups_was_the_session_designed_to_benefit, target_group)
+
+realm_languages <- multichoice_splitting(df_1, which_language_s_was_the_session_delivered_in, realm_language)
+
+# df_x <- df_y %>% 
+#   left_join(delivery_agents, by = "id")
