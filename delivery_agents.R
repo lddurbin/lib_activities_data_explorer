@@ -1,5 +1,5 @@
-delivery_agents <- df_1 %>% 
-  select(1, 41:43, 45:66) %>%
+delivery_agents <- df %>% 
+  select(1, 42:44, 46:67) %>%
   select(
     id,
     agent_types = who_delivered_the_session,
