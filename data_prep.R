@@ -28,10 +28,13 @@ df_2 <- df_1 %>%
   unite("delivery_time", starts_with("at_what_time"), na.rm = TRUE, remove = TRUE) %>% 
   mutate(delivery_datetime = parse_date_time(paste(when_was_the_session_delivered, delivery_time), c("Ymd HMp", "Ymd Hp")), .keep = "unused")
 
+# one row per age group per session
 age_groups <- multichoice_splitting(df_1, what_was_the_target_age_group_for_this_session, age_group)
 
+# one row per target group per session
 target_groups <- multichoice_splitting(df_1, which_of_these_groups_was_the_session_designed_to_benefit, target_group)
 
+# one row per language per session (any free text in "Other" is counted as one language for now)
 realm_languages <- multichoice_splitting(df_1, which_language_s_was_the_session_delivered_in, realm_language)
 
 source("delivery_agents.R")
