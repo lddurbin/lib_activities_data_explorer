@@ -1,8 +1,9 @@
-library("tidyverse")
-library("janitor")
-library("readxl")
-library("fs")
-library("lubridate")
+library("tidyverse") # for everything
+library("janitor") # tidy the column headings
+library("readxl") # source data is an Excel spreadsheet
+library("fs") # to list files in a directory
+library("lubridate") # easy date manipulation
+library("plyr") # for joining multiple data frames with a common key in a single line of code
 
 source("functions.R")
 
@@ -32,5 +33,4 @@ realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_de
 
 source("delivery_agents.R")
 
-session_data <- base_table %>% 
-  left_join(delivery_agents, by = "id")
+session_data <- join_all(list(base_table,delivery_agents,age_groups,realm_languages), by="id", type="left")

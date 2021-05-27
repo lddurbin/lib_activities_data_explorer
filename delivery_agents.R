@@ -12,12 +12,12 @@ delivery_agents <- df %>%
     unit_3_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_libraries_and_learning_unit_who_delivered_the_session_in_the_box_below,
     unit_4_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_maori_outcomes_unit_who_delivered_the_session_in_the_box_below,
     everything()) %>% 
-  pivot_longer(11:length(.), values_to = "library_names") %>% 
-  distinct(id, library_names, .keep_all = TRUE) %>% 
+  pivot_longer(11:length(.), values_to = "delivery_library_names") %>% 
+  distinct(id, delivery_library_names, .keep_all = TRUE) %>% 
   add_count(id) %>% 
-  filter(!is.na(library_names) | n == 1) %>% 
+  filter(!is.na(delivery_library_names) | n == 1) %>% 
   select(-n) %>% 
-  mutate(across(c("unit_names", "library_names"), ~str_sub(.x, 2, -2))) %>% 
+  mutate(across(c("unit_names", "delivery_library_names"), ~str_sub(.x, 2, -2))) %>% 
   mutate(
     Aotea = case_when(str_detect(local_board, c("Aotea / Great Barrier")) == TRUE ~ '"Great Barrier Library"'),
     Franklin = case_when(str_detect(local_board, c("Franklin")) == TRUE ~ '"Franklin Community Hub"'),
@@ -25,9 +25,9 @@ delivery_agents <- df %>%
     Upper_Harbour = case_when(str_detect(local_board, c("Upper Harbour")) == TRUE ~ '"Albany Village Library"'),
     Waiheke = case_when(str_detect(local_board, c("UWaiheke")) == TRUE ~ '"Waiheke Library"')
     ) %>% 
-  unite("library_names", library_names:Waiheke, sep = ",", remove = TRUE, na.rm = TRUE) %>% 
-  separate_rows(c("unit_names", "library_names"), sep = '","') %>% 
-  mutate(across(c("unit_names", "library_names"), ~str_replace_all(.x, '"', ''))) %>% 
+  unite("delivery_library_names", delivery_library_names:Waiheke, sep = ",", remove = TRUE, na.rm = TRUE) %>% 
+  separate_rows(c("unit_names", "delivery_library_names"), sep = '","') %>% 
+  mutate(across(c("unit_names", "delivery_library_names"), ~str_replace_all(.x, '"', ''))) %>% 
   mutate(
     CC_staff_agents = str_detect(agent_types, "Connected Communities staff"),
     non_CC_staff_agents = str_detect(agent_types, "Auckland Council staff"),
