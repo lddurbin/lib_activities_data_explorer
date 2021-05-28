@@ -98,118 +98,202 @@ with_tooltip <- function(value, tooltip) {
 ```{r data_explorer_table, echo=FALSE, warning=FALSE}
 
 bscols(
-  widths = c(3, 9),
+  widths = c(2, 10),
   list(
-    filter_select("location", "Delivery Location", data_explorer, ~location),
-    filter_select("name", "Data Provider", data_explorer, ~name)
+    filter_select("location", "Delivery Location", data_explorer, ~ location),
+    filter_select("name", "Data Provider", data_explorer, ~ name)
   ),
   reactable(
     data_explorer,
     showPageInfo = FALSE,
     theme = reactableTheme(
       # Vertically center cells
-      cellStyle = list(display = "flex", flexDirection = "column", justifyContent = "center")
+      cellStyle = list(
+        display = "flex",
+        flexDirection = "column",
+        justifyContent = "center"
+      )
     ),
     defaultSorted = list(delivery_datetime = "desc"),
     
     # Show user comments in a drop-down box
     details = function(index) {
-      comments <- filter(comments_table, id == data_explorer$data()$id[index]) %>% select(Comments)
-      tbl <- reactable(comments, outlined = TRUE, highlight = TRUE, fullWidth = TRUE)
+      comments <-
+        filter(comments_table, id == data_explorer$data()$id[index]) %>% select(Comments)
+      tbl <-
+        reactable(
+          comments,
+          outlined = TRUE,
+          highlight = TRUE,
+          fullWidth = TRUE
+        )
       htmltools::div(style = list(margin = "12px 45px"), tbl)
     },
     onClick = "expand",
     rowStyle = list(cursor = "pointer"),
     columns = list(
-      
       # **ID**
       id = colDef(
         name = "ID",
         cell = function(value, index) {
           submitted <- data_explorer$data()$submission_info[index]
-          tagList(
-            div(style = list(fontWeight = 600), value),
-            div(style = list(fontSize = 9), submitted)
-          )
+          tagList(div(style = list(fontWeight = 600), value),
+                  div(style = list(fontSize = 9), submitted))
         },
-        style = 
-          JS("function(rowInfo, colInfo, state) {
+        style =
+          JS(
+            "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['id'] === prevRow['id']) {
             return { visibility: 'hidden' }
           }
-      }")
+      }"
+          )
       ),
       
       # **Date**
-      duration_info = colDef(header = with_tooltip("Date", "Date and time that the activity started, and the duration of the session"), aggregate = "unique", style = 
-                               JS("function(rowInfo, colInfo, state) {
+      duration_info = colDef(
+        header = with_tooltip(
+          "Date",
+          "Date and time that the activity started, and the duration of the session"
+        ),
+        aggregate = "unique",
+        style =
+          JS(
+            "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['duration_info'] === prevRow['duration_info']) {
             return { visibility: 'hidden' }
           }
-      }")
+      }"
+          )
       ),
       
       # **Description**
       what_was_the_name_of_the_session = colDef(
         name = "Description",
         cell = function(value, index) {
-          format <- data_explorer$data()$what_was_the_format_of_the_session[index]
-          tagList(
-            div(style = list(fontWeight = 600), value),
-            div(style = list(fontSize = 10), format)
-          )
+          format <-
+            data_explorer$data()$what_was_the_format_of_the_session[index]
+          tagList(div(style = list(fontWeight = 600), value),
+                  div(style = list(fontSize = 10), format))
         },
-        style = 
-          JS("function(rowInfo, colInfo, state) {
+        style =
+          JS(
+            "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['what_was_the_name_of_the_session'] === prevRow['what_was_the_name_of_the_session']) {
             return { visibility: 'hidden' }
           }
-      }")
+      }"
+          )
       ),
       
       # **Delivery Agent(s)**
       delivery_library_names = colDef(
-        header = with_tooltip("Delivery Agent(s)", "A list of those who delivered the activity. These could be Connected Communities staff, other staff in Auckland Council, or anyone outside Auckland Council."),
+        header = with_tooltip(
+          "Delivery Agent(s)",
+          "A list of those who delivered the activity. These could be Connected Communities staff, other staff in Auckland Council, or anyone outside Auckland Council."
+        ),
         cell = function(value, index) {
           staff <- data_explorer$data()$staff_info[index]
-          tagList(
-            div(style = list(fontWeight = 600), value),
-            div(style = list(fontSize = 9), staff)
-          )
+          tagList(div(style = list(fontWeight = 600), value),
+                  div(style = list(fontSize = 9), staff))
         }
       ),
       
       # *Loceation**
-      location = colDef(name = "Delivery Location", style = 
-                          JS("function(rowInfo, colInfo, state) {
+      location = colDef(
+        name = "Delivery Location",
+        style =
+          JS(
+            "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['location'] === prevRow['location']) {
             return { visibility: 'hidden' }
           }
-      }")
+      }"
+          )
       ),
       
       # **Target Age(s)**
-      "Pre-school" = colDef(header = with_tooltip("Pre-school", "Targeted towards those aged under 5")),
-      "Primary" = colDef(header = with_tooltip("Primary", "Targeted towards those aged between 5 and 12")),
-      "Youths" = colDef(header = with_tooltip("Youths", "Targeted towards those aged between 13 and 24")),
-      "Adults" = colDef(header = with_tooltip("Adults", "Targeted towards those aged between 25 and 64")),
-      "Seniors" = colDef(header = with_tooltip("Seniors", "Targeted towards those aged 65 and older")),
+      "Pre-school" = colDef(
+        header = with_tooltip("Pre-school", "Targeted towards those aged under 5"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Primary" = colDef(
+        header = with_tooltip("Primary", "Targeted towards those aged between 5 and 12"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Youths" = colDef(
+        header = with_tooltip("Youths", "Targeted towards those aged between 13 and 24"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Adults" = colDef(
+        header = with_tooltip("Adults", "Targeted towards those aged between 25 and 64"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Seniors" = colDef(
+        header = with_tooltip("Seniors", "Targeted towards those aged 65 and older"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
       
       # **Target Group(s)**
       target_group = colDef(name = "Target Group(s)"),
       
       # **Theme**
-      which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of = colDef(name = "Theme", style = 
-                                                                                                                    JS("function(rowInfo, colInfo, state) {
+      which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of = colDef(
+        name = "Theme",
+        style =
+          JS(
+            "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of'] === prevRow['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of']) {
             return { visibility: 'hidden' }
           }
-      }")),
+      }"
+          )
+      ),
       
       # **HIDDEN COLUMNS**
       submission_info = colDef(show = FALSE),
@@ -219,9 +303,10 @@ bscols(
       what_was_the_format_of_the_session = colDef(show = FALSE),
       staff_info = colDef(show = FALSE)
     ),
-    columnGroups = list(
-      colGroup(name = "Target Age Group(s)", columns = c("Pre-school", "Primary", "Youths", "Adults", "Seniors"))
-    ),
+    columnGroups = list(colGroup(
+      name = "Target Age Group(s)",
+      columns = c("Pre-school", "Primary", "Youths", "Adults", "Seniors")
+    )),
     highlight = TRUE
   )
 )
