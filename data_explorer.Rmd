@@ -8,10 +8,22 @@ theme: lumen
 always_allow_html: true
 ---
 
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library("reactable")
 library("R.utils")
+library("crosstalk")
+library("htmltools")
+library("tippy")
 
 source("data_prep.R")
 
@@ -21,25 +33,123 @@ source("data_prep.R")
 
 Here you can view data submitted via the Programmes and Events form since **July 1, 2021**.
 
-The data was last refreshed on **`r stamp("Sunday May 1, 2000 at 1.30pm")(lastModified(files))`**.
+The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files))`**.
 
-```{r data_explorer_table, echo=FALSE}
+```{r data_explorer_prep, echo=FALSE, message=FALSE}
 
-data_explorer <- session_data
+data_explorer <- plyr::join_all(list(base_table, delivery_agents, age_groups, target_groups, realm_languages), by="id", type="left") %>% 
+  mutate(age_group = word(age_group, 1), delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)) %>% 
+  pivot_wider(names_from = age_group, values_from = age_group) %>% 
+  mutate(across(length(.):(length(.)-4), ~case_when(
+    is.na(.) ~ "\u2718",
+    !is.na(.) ~ "\u2713"
+  ))) %>% 
+  mutate(submission_info = paste0("Data submitted by ", name, " on ", date(submission_time), " at ", hour(submission_time), ":", minute(submission_time))) %>% 
+  select(-c(
+    "NA",
+    submission_time,
+    email,
+    starts_with("how_many_"),
+    what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
+    in_which_local_board_was_the_session_delivered,
+    sublocation,
+    which_of_the_following_outcomes_did_the_session_deliver_against:online,
+    external_agent_names:unit_4_teams,
+    CC_staff_agents:external_agents,
+    realm_language
+    ))
 
-reactable(
+data_explorer <- SharedData$new(data_explorer)
+
+with_tooltip <- function(value, tooltip) {
+  tags$abbr(style = "text-decoration: underline; text-decoration-style: dotted; cursor: help",
+            title = tooltip, value)
+}
+
+```
+
+
+```{r data_explorer_table, echo=FALSE, warning=FALSE}
+
+bscols(
+  widths = c(3, 9),
+    list(
+      filter_select("location", "Delivery Location", data_explorer, ~location),
+      filter_select("name", "Data Provider", data_explorer, ~name)
+  ),
+  reactable(
   data_explorer,
-  filterable = TRUE,
-  searchable = TRUE,
-  minRows = 10,
-  highlight = TRUE,
-  details = colDef(
-    html = TRUE,
-    details = JS("function(rowInfo) {
-      return 'Details for row: ' + rowInfo.index +
-        '<pre>' + JSON.stringify(rowInfo.row, null, 2) + '</pre>'
-    }")
-  )
+    theme = reactableTheme(
+    # Vertically center cells
+    cellStyle = list(display = "flex", flexDirection = "column", justifyContent = "center")
+  ),
+  defaultSorted = list(delivery_datetime = "desc"),
+  columns = list(
+    id = colDef(
+      name = "ID",
+      cell = function(value, index) {
+        submitted <- data_explorer$data()$submission_info[index]
+        tagList(
+          div(style = list(fontWeight = 600), value),
+          div(style = list(fontSize = 10), submitted)
+        )
+      },
+      style = 
+                  JS("function(rowInfo, colInfo, state) {
+          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
+          if (prevRow && rowInfo.row['id'] === prevRow['id']) {
+            return { visibility: 'hidden' }
+          }
+      }")
+    ),
+    delivery_datetime = colDef(header = with_tooltip("Date", "Date and time that the activity started"), aggregate = "unique", style = 
+                  JS("function(rowInfo, colInfo, state) {
+          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
+          if (prevRow && rowInfo.row['delivery_datetime'] === prevRow['delivery_datetime']) {
+            return { visibility: 'hidden' }
+          }
+      }")
+      ),
+    what_was_the_name_of_the_session = colDef(name = "Description", aggregate = "unique", style = 
+                  JS("function(rowInfo, colInfo, state) {
+          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
+          if (prevRow && rowInfo.row['what_was_the_name_of_the_session'] === prevRow['what_was_the_name_of_the_session']) {
+            return { visibility: 'hidden' }
+          }
+      }")
+      ),
+    delivery_library_names = colDef(header = with_tooltip("Delivery Agent(s)", "A list of those who delivered the activity. These could be Connected Communities staff, other staff in Auckland Council, or anyone outside Auckland Council."), aggregate = "unique"),
+    location = colDef(name = "Delivery Location", aggregate = "unique", style = 
+                  JS("function(rowInfo, colInfo, state) {
+          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
+          if (prevRow && rowInfo.row['location'] === prevRow['location']) {
+            return { visibility: 'hidden' }
+          }
+      }")
+      ),
+    "Pre-school" = colDef(header = with_tooltip("Pre-school", "Targeted towards those aged under"), aggregate = "unique"),
+    "Primary" = colDef(header = with_tooltip("Primary", "Targeted towards those aged between 5 and 12"), aggregate = "unique"),
+    "Youths" = colDef(header = with_tooltip("Youths", "Targeted towards those aged between 13 and 24"), aggregate = "unique"),
+    "Adults" = colDef(header = with_tooltip("Adults", "Targeted towards those aged between 25 and 64"), aggregate = "unique"),
+    "Seniors" = colDef(header = with_tooltip("Seniors", "Targeted towards those aged 65 and older"), aggregate = "unique"),
+    target_group = colDef(name = "Target Group(s)", aggregate = "unique"),
+    which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of = colDef(name = "Theme", aggregate = "unique", style = 
+                  JS("function(rowInfo, colInfo, state) {
+          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
+          if (prevRow && rowInfo.row['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of'] === prevRow['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of']) {
+            return { visibility: 'hidden' }
+          }
+      }")),
+    submission_info = colDef(show = FALSE),
+    name = colDef(show = FALSE)
+  ),
+  columnGroups = list(
+    colGroup(name = "Target Age Group(s)", columns = c("Pre-school", "Primary", "Youths", "Adults", "Seniors"))
+  ),
+  highlight = TRUE
 )
+)
+
+
 ```
 

@@ -3,7 +3,6 @@ library("janitor") # tidy the column headings
 library("readxl") # source data is an Excel spreadsheet
 library("fs") # to list files in a directory
 library("lubridate") # easy date manipulation
-library("plyr") # for joining multiple data frames with a common key in a single line of code
 
 source("functions.R")
 
@@ -14,7 +13,7 @@ df <- files %>%
   map_dfr(read_excel) %>% 
   select(-c(starts_with(c("Do you know", "Can you", "Did the session", "How would you describe", "Was the session")))) %>% 
   clean_names() %>% 
-  mutate(id = as.character(id), submission_time = date(submission_time))
+  mutate(id = as.character(id))
 
 # Online/offline columns, concatenate locations into 1 column, datetime column
 base_table <- df %>% 
@@ -32,5 +31,3 @@ target_groups <- multichoice_splitting(df, which_of_these_groups_was_the_session
 realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_delivered_in, realm_language)
 
 source("delivery_agents.R")
-
-session_data <- join_all(list(base_table,delivery_agents,age_groups,realm_languages), by="id", type="left")
