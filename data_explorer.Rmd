@@ -16,6 +16,8 @@ always_allow_html: true
 }
 </style>
 
+<img src="https://www.aucklandcouncil.govt.nz/publishingimages/bi/Logos/AucklandLibraries.svg" alt="Auckland Libraries logo" title="Auckland Libraries" style="position:absolute;top:10px;right:10px;width:200px" />
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -37,6 +39,14 @@ The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastMo
 
 ```{r data_explorer_prep, echo=FALSE, message=FALSE}
 
+delivery_agents <- delivery_agents %>% 
+  group_by(across(-delivery_library_names)) %>% 
+  summarise(delivery_library_names = str_c(delivery_library_names, collapse = " | "), .groups = "drop")
+
+target_groups <- target_groups %>% 
+  group_by(id) %>% 
+  summarise(target_group = str_c(target_group, collapse = " | "), .groups = "drop")
+
 data_explorer <- plyr::join_all(list(base_table, delivery_agents, age_groups, target_groups, realm_languages), by="id", type="left") %>% 
   mutate(age_group = word(age_group, 1), delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)) %>% 
   pivot_wider(names_from = age_group, values_from = age_group) %>% 
@@ -44,7 +54,13 @@ data_explorer <- plyr::join_all(list(base_table, delivery_agents, age_groups, ta
     is.na(.) ~ "\u2718",
     !is.na(.) ~ "\u2713"
   ))) %>% 
-  mutate(submission_info = paste0("Data submitted by ", name, " on ", date(submission_time), " at ", hour(submission_time), ":", minute(submission_time))) %>% 
+  mutate(
+    submission_info = paste0("Data submitted by ", name, " on ", stamp("Sunday, May 1 2000 at 1.30pm")(submission_time)),
+    duration_info = paste0(delivery_datetime, " for ", what_was_the_duration_of_the_session_to_the_nearest_half_an_hour),
+    staff_info = case_when(
+      is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",
+      !is.na(how_many_connected_communities_staff_delivered_the_session) ~ paste0(how_many_connected_communities_staff_delivered_the_session, " Connected Communities staff delivered this session")
+    )) %>% 
   select(-c(
     "NA",
     submission_time,
@@ -53,11 +69,21 @@ data_explorer <- plyr::join_all(list(base_table, delivery_agents, age_groups, ta
     what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
     in_which_local_board_was_the_session_delivered,
     sublocation,
-    which_of_the_following_outcomes_did_the_session_deliver_against:online,
+    which_of_the_following_outcomes_did_the_session_deliver_against:was_this_an_esol_session,
+    in_person:online,
     external_agent_names:unit_4_teams,
     CC_staff_agents:external_agents,
     realm_language
-    ))
+    )) %>% 
+  unique() %>% 
+  select(id, duration_info, what_was_the_name_of_the_session, delivery_library_names, location, "Pre-school", Primary, Youths, Adults, Seniors, target_group, everything())
+
+comments_table <- data_explorer %>% 
+  select(id, Comments = please_use_the_box_below_to_write_any_further_comments_you_wish_to_make_about_this_session) %>% 
+  mutate(Comments = case_when(
+    is.na(Comments) ~ "No comments",
+    !is.na(Comments) ~ Comments
+  ))
 
 data_explorer <- SharedData$new(data_explorer)
 
@@ -73,81 +99,131 @@ with_tooltip <- function(value, tooltip) {
 
 bscols(
   widths = c(3, 9),
-    list(
-      filter_select("location", "Delivery Location", data_explorer, ~location),
-      filter_select("name", "Data Provider", data_explorer, ~name)
+  list(
+    filter_select("location", "Delivery Location", data_explorer, ~location),
+    filter_select("name", "Data Provider", data_explorer, ~name)
   ),
   reactable(
-  data_explorer,
+    data_explorer,
+    showPageInfo = FALSE,
     theme = reactableTheme(
-    # Vertically center cells
-    cellStyle = list(display = "flex", flexDirection = "column", justifyContent = "center")
-  ),
-  defaultSorted = list(delivery_datetime = "desc"),
-  columns = list(
-    id = colDef(
-      name = "ID",
-      cell = function(value, index) {
-        submitted <- data_explorer$data()$submission_info[index]
-        tagList(
-          div(style = list(fontWeight = 600), value),
-          div(style = list(fontSize = 10), submitted)
-        )
-      },
-      style = 
-                  JS("function(rowInfo, colInfo, state) {
+      # Vertically center cells
+      cellStyle = list(display = "flex", flexDirection = "column", justifyContent = "center")
+    ),
+    defaultSorted = list(delivery_datetime = "desc"),
+    
+    # Show user comments in a drop-down box
+    details = function(index) {
+      comments <- filter(comments_table, id == data_explorer$data()$id[index]) %>% select(Comments)
+      tbl <- reactable(comments, outlined = TRUE, highlight = TRUE, fullWidth = TRUE)
+      htmltools::div(style = list(margin = "12px 45px"), tbl)
+    },
+    onClick = "expand",
+    rowStyle = list(cursor = "pointer"),
+    columns = list(
+      
+      # **ID**
+      id = colDef(
+        name = "ID",
+        cell = function(value, index) {
+          submitted <- data_explorer$data()$submission_info[index]
+          tagList(
+            div(style = list(fontWeight = 600), value),
+            div(style = list(fontSize = 9), submitted)
+          )
+        },
+        style = 
+          JS("function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['id'] === prevRow['id']) {
             return { visibility: 'hidden' }
           }
       }")
-    ),
-    delivery_datetime = colDef(header = with_tooltip("Date", "Date and time that the activity started"), aggregate = "unique", style = 
-                  JS("function(rowInfo, colInfo, state) {
+      ),
+      
+      # **Date**
+      duration_info = colDef(header = with_tooltip("Date", "Date and time that the activity started, and the duration of the session"), aggregate = "unique", style = 
+                               JS("function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
-          if (prevRow && rowInfo.row['delivery_datetime'] === prevRow['delivery_datetime']) {
+          if (prevRow && rowInfo.row['duration_info'] === prevRow['duration_info']) {
             return { visibility: 'hidden' }
           }
       }")
       ),
-    what_was_the_name_of_the_session = colDef(name = "Description", aggregate = "unique", style = 
-                  JS("function(rowInfo, colInfo, state) {
+      
+      # **Description**
+      what_was_the_name_of_the_session = colDef(
+        name = "Description",
+        cell = function(value, index) {
+          format <- data_explorer$data()$what_was_the_format_of_the_session[index]
+          tagList(
+            div(style = list(fontWeight = 600), value),
+            div(style = list(fontSize = 10), format)
+          )
+        },
+        style = 
+          JS("function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['what_was_the_name_of_the_session'] === prevRow['what_was_the_name_of_the_session']) {
             return { visibility: 'hidden' }
           }
       }")
       ),
-    delivery_library_names = colDef(header = with_tooltip("Delivery Agent(s)", "A list of those who delivered the activity. These could be Connected Communities staff, other staff in Auckland Council, or anyone outside Auckland Council."), aggregate = "unique"),
-    location = colDef(name = "Delivery Location", aggregate = "unique", style = 
-                  JS("function(rowInfo, colInfo, state) {
+      
+      # **Delivery Agent(s)**
+      delivery_library_names = colDef(
+        header = with_tooltip("Delivery Agent(s)", "A list of those who delivered the activity. These could be Connected Communities staff, other staff in Auckland Council, or anyone outside Auckland Council."),
+        cell = function(value, index) {
+          staff <- data_explorer$data()$staff_info[index]
+          tagList(
+            div(style = list(fontWeight = 600), value),
+            div(style = list(fontSize = 9), staff)
+          )
+        }
+      ),
+      
+      # *Loceation**
+      location = colDef(name = "Delivery Location", style = 
+                          JS("function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['location'] === prevRow['location']) {
             return { visibility: 'hidden' }
           }
       }")
       ),
-    "Pre-school" = colDef(header = with_tooltip("Pre-school", "Targeted towards those aged under"), aggregate = "unique"),
-    "Primary" = colDef(header = with_tooltip("Primary", "Targeted towards those aged between 5 and 12"), aggregate = "unique"),
-    "Youths" = colDef(header = with_tooltip("Youths", "Targeted towards those aged between 13 and 24"), aggregate = "unique"),
-    "Adults" = colDef(header = with_tooltip("Adults", "Targeted towards those aged between 25 and 64"), aggregate = "unique"),
-    "Seniors" = colDef(header = with_tooltip("Seniors", "Targeted towards those aged 65 and older"), aggregate = "unique"),
-    target_group = colDef(name = "Target Group(s)", aggregate = "unique"),
-    which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of = colDef(name = "Theme", aggregate = "unique", style = 
-                  JS("function(rowInfo, colInfo, state) {
+      
+      # **Target Age(s)**
+      "Pre-school" = colDef(header = with_tooltip("Pre-school", "Targeted towards those aged under 5")),
+      "Primary" = colDef(header = with_tooltip("Primary", "Targeted towards those aged between 5 and 12")),
+      "Youths" = colDef(header = with_tooltip("Youths", "Targeted towards those aged between 13 and 24")),
+      "Adults" = colDef(header = with_tooltip("Adults", "Targeted towards those aged between 25 and 64")),
+      "Seniors" = colDef(header = with_tooltip("Seniors", "Targeted towards those aged 65 and older")),
+      
+      # **Target Group(s)**
+      target_group = colDef(name = "Target Group(s)"),
+      
+      # **Theme**
+      which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of = colDef(name = "Theme", style = 
+                                                                                                                    JS("function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of'] === prevRow['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of']) {
             return { visibility: 'hidden' }
           }
       }")),
-    submission_info = colDef(show = FALSE),
-    name = colDef(show = FALSE)
-  ),
-  columnGroups = list(
-    colGroup(name = "Target Age Group(s)", columns = c("Pre-school", "Primary", "Youths", "Adults", "Seniors"))
-  ),
-  highlight = TRUE
-)
+      
+      # **HIDDEN COLUMNS**
+      submission_info = colDef(show = FALSE),
+      name = colDef(show = FALSE),
+      please_use_the_box_below_to_write_any_further_comments_you_wish_to_make_about_this_session = colDef(show = FALSE),
+      delivery_datetime = colDef(show = FALSE),
+      what_was_the_format_of_the_session = colDef(show = FALSE),
+      staff_info = colDef(show = FALSE)
+    ),
+    columnGroups = list(
+      colGroup(name = "Target Age Group(s)", columns = c("Pre-school", "Primary", "Youths", "Adults", "Seniors"))
+    ),
+    highlight = TRUE
+  )
 )
 
 
