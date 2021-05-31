@@ -194,7 +194,7 @@ bscols(
       internal_delivery_teams = colDef(
         header = with_tooltip(
           "Connected Communities Delivery Agent(s)",
-          "A list of those who delivered the activity. These could be Connected Communities staff, other staff in Auckland Council, or anyone outside Auckland Council."
+          "A list of any Connected Communities staff who delivered the activity."
         ),
         cell = function(value, index) {
           staff <- data_explorer$data()$staff_info[index]
