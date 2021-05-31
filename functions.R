@@ -13,5 +13,5 @@ concat_rows <- function(data, col_to_concat) {
   data %>% 
     group_by(id) %>% 
     distinct({{col_to_concat}}) %>% 
-    summarise({{col_to_concat}} := str_c({{col_to_concat}}, collapse = " | "), .groups = "drop")
+    summarise({{col_to_concat}} := str_c({{col_to_concat}}, collapse = " --- "), .groups = "drop")
 }

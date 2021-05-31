@@ -44,11 +44,11 @@ concat_libs <- delivery_agents %>% concat_rows(delivery_library_names)
 concat_units <- delivery_agents %>% concat_rows(unit_names)
 
 delivery_agents <- left_join(concat_libs, concat_units) %>% 
-  unite("internal_delivery_teams", delivery_library_names:unit_names, sep = " | ", na.rm = TRUE)
+  unite("internal_delivery_teams", delivery_library_names:unit_names, sep = " --- ", na.rm = TRUE)
 
 target_groups <- target_groups %>% 
   group_by(id) %>% 
-  summarise(target_group = str_c(target_group, collapse = " | "), .groups = "drop")
+  summarise(target_group = str_c(target_group, collapse = " --- "), .groups = "drop")
 
 data_explorer_data <- plyr::join_all(list(base_table, delivery_agents, age_groups, target_groups, realm_languages), by="id", type="left") %>%
   mutate(age_group = word(age_group, 1), delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)) %>% 
@@ -58,7 +58,7 @@ data_explorer_data <- plyr::join_all(list(base_table, delivery_agents, age_group
     !is.na(.) ~ "\u2713"
   ))) %>% 
   mutate(
-    submission_info = paste0("Data submitted by ", name, " on ", stamp("Sunday, May 1 2000 at 1.30pm")(submission_time)),
+    submission_info = paste0("Data submitted by ", name, " on ", stamp("Sunday, May 1 2000 at 1.30pm")(submission_time %>% with_tz("NZ"))),
     duration_info = paste0(delivery_datetime, " for ", what_was_the_duration_of_the_session_to_the_nearest_half_an_hour),
     staff_info = case_when(
       is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",
