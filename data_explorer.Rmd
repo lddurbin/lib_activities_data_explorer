@@ -43,14 +43,14 @@ concat_libs <- delivery_agents %>% concat_rows(delivery_library_names)
 
 concat_units <- delivery_agents %>% concat_rows(unit_names)
 
-delivery_agents <- left_join(concat_libs, concat_units) %>% 
+delivery_agents_explorer <- left_join(concat_libs, concat_units) %>% 
   unite("internal_delivery_teams", delivery_library_names:unit_names, sep = " --- ", na.rm = TRUE)
 
 target_groups <- target_groups %>% 
   group_by(id) %>% 
   summarise(target_group = str_c(target_group, collapse = " --- "), .groups = "drop")
 
-data_explorer_data <- plyr::join_all(list(base_table, delivery_agents, age_groups, target_groups, realm_languages), by="id", type="left") %>%
+data_explorer_data <- plyr::join_all(list(base_table, delivery_agents_explorer, age_groups, target_groups, realm_languages), by="id", type="left") %>%
   mutate(age_group = word(age_group, 1), delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)) %>% 
   pivot_wider(names_from = age_group, values_from = age_group) %>% 
   mutate(across(length(.):(length(.)-4), ~case_when(
