@@ -60,7 +60,9 @@ data_explorer <- plyr::join_all(list(base_table, delivery_agents, age_groups, ta
     staff_info = case_when(
       is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",
       !is.na(how_many_connected_communities_staff_delivered_the_session) ~ paste0(how_many_connected_communities_staff_delivered_the_session, " Connected Communities staff delivered this session")
-    )) %>% 
+    ),
+    offline_participants = how_many_adults_aged_18_attended_in_person_at_this_session + how_many_children_aged_under_18_attended_in_person_at_this_session
+    ) %>% 
   select(-c(
     "NA",
     submission_time,
@@ -131,6 +133,7 @@ bscols(
     },
     onClick = "expand",
     rowStyle = list(cursor = "pointer"),
+    
     columns = list(
       # **ID**
       id = colDef(
@@ -289,6 +292,20 @@ bscols(
             "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
           if (prevRow && rowInfo.row['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of'] === prevRow['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of']) {
+            return { visibility: 'hidden' }
+          }
+      }"
+          )
+      ),
+      
+            # *Offline Participants**
+      offline_participants = colDef(
+        name = "In-Person Participants",
+        style =
+          JS(
+            "function(rowInfo, colInfo, state) {
+          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
+          if (prevRow && rowInfo.row['offline_participants'] === prevRow['offline_participants']) {
             return { visibility: 'hidden' }
           }
       }"
