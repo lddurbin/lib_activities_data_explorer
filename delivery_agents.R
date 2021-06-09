@@ -33,4 +33,5 @@ delivery_agents <- df %>%
     non_CC_staff_agents = str_detect(agent_types, "Auckland Council staff"),
     external_agents = str_detect(agent_types, "Anyone not employed by Auckland Council")
     ) %>% 
-  select(-c(agent_types, name, local_board))
+  select(-c(agent_types, name, local_board)) %>% 
+  mutate(across(everything(), na_if, ""))

@@ -16,7 +16,7 @@ always_allow_html: true
 }
 </style>
 
-<img src="https://www.aucklandcouncil.govt.nz/publishingimages/bi/Logos/AucklandLibraries.svg" alt="Auckland Libraries logo" title="Auckland Libraries" style="position:absolute;top:10px;right:10px;width:200px" />
+<img src="https://www.aucklandcouncil.govt.nz/_layouts/15/ACWeb/images/ac-logo-large.svg" alt="Auckland Council logo" title="Auckland Council" style="position:absolute;top:10px;right:10px;width:200px" />
 
 
 ```{r setup, include=FALSE}
@@ -35,19 +35,22 @@ source("data_prep.R")
 
 Here you can view data submitted via the Programmes and Events form since **July 1, 2021**.
 
-The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files))`**.
+The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**.
 
 ```{r data_explorer_prep, echo=FALSE, message=FALSE}
 
-delivery_agents <- delivery_agents %>% 
-  group_by(across(-delivery_library_names)) %>% 
-  summarise(delivery_library_names = str_c(delivery_library_names, collapse = " | "), .groups = "drop")
+concat_libs <- delivery_agents %>% concat_rows(delivery_library_names)
+
+concat_units <- delivery_agents %>% concat_rows(unit_names)
+
+delivery_agents <- left_join(concat_libs, concat_units) %>% 
+  unite("internal_delivery_teams", delivery_library_names:unit_names, sep = " --- ", na.rm = TRUE)
 
 target_groups <- target_groups %>% 
   group_by(id) %>% 
-  summarise(target_group = str_c(target_group, collapse = " | "), .groups = "drop")
+  summarise(target_group = str_c(target_group, collapse = " --- "), .groups = "drop")
 
-data_explorer <- plyr::join_all(list(base_table, delivery_agents, age_groups, target_groups, realm_languages), by="id", type="left") %>% 
+data_explorer_data <- plyr::join_all(list(base_table, delivery_agents, age_groups, target_groups, realm_languages), by="id", type="left") %>%
   mutate(age_group = word(age_group, 1), delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)) %>% 
   pivot_wider(names_from = age_group, values_from = age_group) %>% 
   mutate(across(length(.):(length(.)-4), ~case_when(
@@ -55,7 +58,7 @@ data_explorer <- plyr::join_all(list(base_table, delivery_agents, age_groups, ta
     !is.na(.) ~ "\u2713"
   ))) %>% 
   mutate(
-    submission_info = paste0("Data submitted by ", name, " on ", stamp("Sunday, May 1 2000 at 1.30pm")(submission_time)),
+    submission_info = paste0("Data submitted by ", name, " on ", stamp("Sunday, May 1 2000 at 1.30pm")(submission_time %>% with_tz("NZ"))),
     duration_info = paste0(delivery_datetime, " for ", what_was_the_duration_of_the_session_to_the_nearest_half_an_hour),
     staff_info = case_when(
       is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",
@@ -73,21 +76,19 @@ data_explorer <- plyr::join_all(list(base_table, delivery_agents, age_groups, ta
     sublocation,
     which_of_the_following_outcomes_did_the_session_deliver_against:was_this_an_esol_session,
     in_person:online,
-    external_agent_names:unit_4_teams,
-    CC_staff_agents:external_agents,
     realm_language
     )) %>% 
   unique() %>% 
-  select(id, duration_info, what_was_the_name_of_the_session, delivery_library_names, location, "Pre-school", Primary, Youths, Adults, Seniors, target_group, everything())
+  select(id, duration_info, what_was_the_name_of_the_session, internal_delivery_teams, location, "Pre-school", Primary, Youths, Adults, Seniors, target_group, everything())
 
-comments_table <- data_explorer %>% 
+comments_table <- data_explorer_data %>% 
   select(id, Comments = please_use_the_box_below_to_write_any_further_comments_you_wish_to_make_about_this_session) %>% 
   mutate(Comments = case_when(
     is.na(Comments) ~ "No comments",
     !is.na(Comments) ~ Comments
   ))
 
-data_explorer <- SharedData$new(data_explorer)
+data_explorer <- SharedData$new(data_explorer_data)
 
 with_tooltip <- function(value, tooltip) {
   tags$abbr(style = "text-decoration: underline; text-decoration-style: dotted; cursor: help",
@@ -193,19 +194,22 @@ bscols(
       ),
       
       # **Delivery Agent(s)**
-      delivery_library_names = colDef(
+      internal_delivery_teams = colDef(
         header = with_tooltip(
-          "Delivery Agent(s)",
-          "A list of those who delivered the activity. These could be Connected Communities staff, other staff in Auckland Council, or anyone outside Auckland Council."
+          "Connected Communities Delivery Agent(s)",
+          "A list of any Connected Communities staff who delivered the activity."
         ),
         cell = function(value, index) {
           staff <- data_explorer$data()$staff_info[index]
-          tagList(div(style = list(fontWeight = 600), value),
-                  div(style = list(fontSize = 9), staff))
+          tagList(
+            div(style = list(fontWeight = 600), value),
+            
+            div(style = list(fontSize = 9), staff)
+            )
         }
       ),
       
-      # *Loceation**
+      # *Location**
       location = colDef(
         name = "Delivery Location",
         style =
