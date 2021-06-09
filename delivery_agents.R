@@ -1,20 +1,9 @@
 delivery_agents <- df %>% 
-  select(1, 42:44, 46:67) %>%
-  select(
-    id,
-    agent_types = who_delivered_the_session,
-    external_agent_names = for_your_own_records_you_can_provide_further_information_about_the_external_delivery_agent_s_in_the_box_below,
-    AC_agent_names = for_your_own_records_you_can_enter_the_name_of_the_auckland_council_team_s_in_the_box_below,
-    local_board = within_which_local_board_is_the_library_or_community_hub_team_based,
-    unit_names = to_which_unit_would_you_assign_the_employee_s_who_delivered_this_session,
-    unit_1_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_arts_culture_heritage_unit_who_delivered_the_session_in_the_box_below,
-    unit_2_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_community_impact_unit_who_delivered_the_session_in_the_box_below,
-    unit_3_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_libraries_and_learning_unit_who_delivered_the_session_in_the_box_below,
-    unit_4_teams = for_your_records_you_may_enter_the_name_of_the_team_s_in_the_maori_outcomes_unit_who_delivered_the_session_in_the_box_below,
-    everything()) %>% 
-  pivot_longer(11:length(.), values_to = "delivery_library_names") %>% 
-  distinct(id, delivery_library_names, .keep_all = TRUE) %>% 
-  add_count(id) %>% 
+  select(id, agent_types = who_delivered_the_session, unit_names = to_which_unit_would_you_assign_the_employee_s_who_delivered_this_session, starts_with(c("within_which", "for_your_"))) %>% 
+  rename(local_board = 4, external_agent_names = length(.)-5, AC_agent_names = length(.)-4, unit_1_teams = length(.)-3, unit_2_teams = length(.)-2, unit_3_teams = length(.)-1, unit_4_teams = length(.)) %>% 
+  pivot_longer(starts_with("within_which_albert"):starts_with("within_which_whau"), values_to = "delivery_library_names") %>% 
+  distinct(id, delivery_library_names, .keep_all = TRUE) %>%
+  add_count(id) %>%
   filter(!is.na(delivery_library_names) | n == 1) %>% 
   select(-n) %>% 
   mutate(across(c("unit_names", "delivery_library_names"), ~str_sub(.x, 2, -2))) %>% 
@@ -23,15 +12,15 @@ delivery_agents <- df %>%
     Franklin = case_when(str_detect(local_board, c("Franklin")) == TRUE ~ '"Franklin Community Hub"'),
     Puketapapa = case_when(str_detect(local_board, c("Puketapapa")) == TRUE ~ '"Mt Roskill Library"'),
     Upper_Harbour = case_when(str_detect(local_board, c("Upper Harbour")) == TRUE ~ '"Albany Village Library"'),
-    Waiheke = case_when(str_detect(local_board, c("UWaiheke")) == TRUE ~ '"Waiheke Library"')
-    ) %>% 
-  unite("delivery_library_names", delivery_library_names:Waiheke, sep = ",", remove = TRUE, na.rm = TRUE) %>% 
-  separate_rows(c("unit_names", "delivery_library_names"), sep = '","') %>% 
-  mutate(across(c("unit_names", "delivery_library_names"), ~str_replace_all(.x, '"', ''))) %>% 
+    Waiheke = case_when(str_detect(local_board, c("Waiheke")) == TRUE ~ '"Waiheke Library"')
+  ) %>%
+  unite("delivery_library_names", delivery_library_names:Waiheke, sep = ",", remove = TRUE, na.rm = TRUE) %>%
+  separate_rows(c("unit_names", "delivery_library_names"), sep = '","') %>%
+  mutate(across(c("unit_names", "delivery_library_names"), ~str_replace_all(.x, '"', ''))) %>%
   mutate(
     CC_staff_agents = str_detect(agent_types, "Connected Communities staff"),
     non_CC_staff_agents = str_detect(agent_types, "Auckland Council staff"),
     external_agents = str_detect(agent_types, "Anyone not employed by Auckland Council")
-    ) %>% 
-  select(-c(agent_types, name, local_board)) %>% 
+  ) %>%
+  select(-c(agent_types, name, local_board)) %>%
   mutate(across(everything(), na_if, ""))
