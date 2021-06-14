@@ -17,7 +17,7 @@ df <- files %>%
 
 # Online/offline columns, concatenate locations into 1 column, datetime column
 base_table <- df %>% 
-  select(-c(42:44, 46:70)) %>%
+  select(-c(42:44, 46:70, 72:77)) %>%
   mutate(in_person = str_detect(how_was_the_session_delivered, "person"), online = str_detect(how_was_the_session_delivered, "Online"), .keep = "unused") %>% 
   unite("location", starts_with("where_in"), na.rm = TRUE, remove = TRUE) %>% 
   unite("sublocation", c(18:20), na.rm = TRUE, remove = TRUE) %>% 

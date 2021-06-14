@@ -39,6 +39,11 @@ The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastMo
 
 ```{r data_explorer_prep, echo=FALSE, message=FALSE}
 
+# Create these columns if they don't exist
+cols <- read_csv("data/expected_column_headers.csv") %>% 
+  as_tibble(.rows = NULL) %>% 
+  add_row()
+
 concat_libs <- delivery_agents %>% concat_rows(delivery_library_names)
 
 concat_units <- delivery_agents %>% concat_rows(unit_names)
@@ -53,10 +58,6 @@ target_groups <- target_groups %>%
 data_explorer_data <- plyr::join_all(list(base_table, delivery_agents_explorer, age_groups, target_groups, realm_languages), by="id", type="left") %>%
   mutate(age_group = word(age_group, 1), delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)) %>% 
   pivot_wider(names_from = age_group, values_from = age_group) %>% 
-  mutate(across(length(.):(length(.)-4), ~case_when(
-    is.na(.) ~ "\u2718",
-    !is.na(.) ~ "\u2713"
-  ))) %>% 
   mutate(
     submission_info = paste0("Data submitted by ", name, " on ", stamp("Sunday, May 1 2000 at 1.30pm")(submission_time %>% with_tz("NZ"))),
     duration_info = paste0(delivery_datetime, " for ", what_was_the_duration_of_the_session_to_the_nearest_half_an_hour),
@@ -64,7 +65,7 @@ data_explorer_data <- plyr::join_all(list(base_table, delivery_agents_explorer, 
       is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",
       !is.na(how_many_connected_communities_staff_delivered_the_session) ~ paste0(how_many_connected_communities_staff_delivered_the_session, " Connected Communities staff delivered this session")
     ),
-    offline_participants = how_many_adults_aged_18_attended_in_person_at_this_session + how_many_children_aged_under_18_attended_in_person_at_this_session
+    offline_participants = (how_many_adults_aged_18_attended_in_person_at_this_session) + (how_many_children_aged_under_18_attended_in_person_at_this_session)
     ) %>% 
   select(-c(
     "NA",
@@ -74,11 +75,15 @@ data_explorer_data <- plyr::join_all(list(base_table, delivery_agents_explorer, 
     what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
     in_which_local_board_was_the_session_delivered,
     sublocation,
-    which_of_the_following_outcomes_did_the_session_deliver_against:was_this_an_esol_session,
     in_person:online,
     realm_language
     )) %>% 
   unique() %>% 
+  add_column(!!!cols[!names(cols) %in% names(.)]) %>% 
+    mutate(across(c("Seniors", "Adults", "Youths", "Primary", "Pre-school"), ~case_when(
+    is.na(.) ~ "\u2718",
+    !is.na(.) ~ "\u2713"
+  ))) %>% 
   select(id, duration_info, what_was_the_name_of_the_session, internal_delivery_teams, location, "Pre-school", Primary, Youths, Adults, Seniors, target_group, everything())
 
 comments_table <- data_explorer_data %>% 
