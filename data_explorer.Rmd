@@ -64,9 +64,14 @@ data_explorer_data <- plyr::join_all(list(base_table, delivery_agents_explorer, 
     staff_info = case_when(
       is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",
       !is.na(how_many_connected_communities_staff_delivered_the_session) ~ paste0(how_many_connected_communities_staff_delivered_the_session, " Connected Communities staff delivered this session")
-    ),
-    offline_participants = (how_many_adults_aged_18_attended_in_person_at_this_session) + (how_many_children_aged_under_18_attended_in_person_at_this_session)
+    )
     ) %>% 
+  rowwise() %>% 
+  mutate(
+        offline_participants = sum(c(how_many_adults_aged_18_attended_in_person_at_this_session, how_many_children_aged_under_18_attended_in_person_at_this_session), na.rm = TRUE),
+    online_participants = sum(c(how_many_adults_aged_18_watched_the_live_online_broadcast_of_this_session, how_many_children_aged_under_18_watched_the_live_online_broadcast_of_this_session, how_many_people_watched_the_live_online_broadcast_of_this_session), na.rm = TRUE)
+  ) %>% 
+  ungroup() %>% 
   select(-c(
     "NA",
     submission_time,
@@ -171,9 +176,6 @@ bscols(
           JS(
             "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
-          if (prevRow && rowInfo.row['duration_info'] === prevRow['duration_info']) {
-            return { visibility: 'hidden' }
-          }
       }"
           )
       ),
@@ -191,9 +193,6 @@ bscols(
           JS(
             "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
-          if (prevRow && rowInfo.row['what_was_the_name_of_the_session'] === prevRow['what_was_the_name_of_the_session']) {
-            return { visibility: 'hidden' }
-          }
       }"
           )
       ),
@@ -210,7 +209,7 @@ bscols(
             div(style = list(fontWeight = 600), value),
             
             div(style = list(fontSize = 9), staff)
-            )
+          )
         }
       ),
       
@@ -221,9 +220,6 @@ bscols(
           JS(
             "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
-          if (prevRow && rowInfo.row['location'] === prevRow['location']) {
-            return { visibility: 'hidden' }
-          }
       }"
           )
       ),
@@ -300,23 +296,28 @@ bscols(
           JS(
             "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
-          if (prevRow && rowInfo.row['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of'] === prevRow['which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of']) {
-            return { visibility: 'hidden' }
-          }
       }"
           )
       ),
       
-            # *Offline Participants**
+      # *Offline Participants**
       offline_participants = colDef(
         name = "In-Person Participants",
         style =
           JS(
             "function(rowInfo, colInfo, state) {
           var prevRow = state.pageRows[rowInfo.viewIndex - 1]
-          if (prevRow && rowInfo.row['offline_participants'] === prevRow['offline_participants']) {
-            return { visibility: 'hidden' }
-          }
+      }"
+          )
+      ),
+      
+      # *Online Participants**
+      online_participants = colDef(
+        name = "Online Participants",
+        style =
+          JS(
+            "function(rowInfo, colInfo, state) {
+          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
       }"
           )
       ),
