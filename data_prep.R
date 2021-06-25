@@ -1,8 +1,8 @@
-library("tidyverse") # for everything
-library("janitor") # tidy the column headings
-library("readxl") # source data is an Excel spreadsheet
-library("fs") # to list files in a directory
-library("lubridate") # easy date manipulation
+library("tidyverse", warn.conflicts = FALSE) # for everything
+library("janitor", warn.conflicts = FALSE) # tidy the column headings
+library("readxl", warn.conflicts = FALSE) # source data is an Excel spreadsheet
+library("fs", warn.conflicts = FALSE) # to list files in a directory
+library("lubridate", warn.conflicts = FALSE) # easy date manipulation
 
 source("functions.R")
 

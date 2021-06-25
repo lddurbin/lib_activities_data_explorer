@@ -21,11 +21,11 @@ always_allow_html: true
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library("reactable")
-library("R.utils")
-library("crosstalk")
-library("htmltools")
-library("tippy")
+library("reactable", warn.conflicts = FALSE)
+library("R.utils", warn.conflicts = FALSE)
+library("crosstalk", warn.conflicts = FALSE)
+library("htmltools", warn.conflicts = FALSE)
+library("tippy", warn.conflicts = FALSE)
 
 source("data_prep.R")
 
