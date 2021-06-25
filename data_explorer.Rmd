@@ -39,64 +39,146 @@ The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastMo
 
 ```{r data_explorer_prep, echo=FALSE, message=FALSE}
 
+
 # Create these columns if they don't exist
-cols <- read_csv("data/expected_column_headers.csv") %>% 
-  as_tibble(.rows = NULL) %>% 
+cols <- read_csv("data/expected_column_headers.csv") %>%
+  as_tibble(.rows = NULL) %>%
   add_row()
 
-concat_libs <- delivery_agents %>% concat_rows(delivery_library_names)
+concat_libs <-
+  delivery_agents %>% concat_rows(delivery_library_names)
 
 concat_units <- delivery_agents %>% concat_rows(unit_names)
 
-delivery_agents_explorer <- left_join(concat_libs, concat_units) %>% 
-  unite("internal_delivery_teams", delivery_library_names:unit_names, sep = " --- ", na.rm = TRUE)
+delivery_agents_explorer <-
+  left_join(concat_libs, concat_units) %>%
+  unite(
+    "internal_delivery_teams",
+    delivery_library_names:unit_names,
+    sep = " --- ",
+    na.rm = TRUE
+  )
 
-target_groups <- target_groups %>% 
-  group_by(id) %>% 
-  summarise(target_group = str_c(target_group, collapse = " --- "), .groups = "drop")
+target_groups <- target_groups %>% concat_rows(target_group)
 
-data_explorer_data <- plyr::join_all(list(base_table, delivery_agents_explorer, age_groups, target_groups, realm_languages), by="id", type="left") %>%
-  mutate(age_group = word(age_group, 1), delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)) %>% 
-  pivot_wider(names_from = age_group, values_from = age_group) %>% 
+data_explorer_data <-
+  plyr::join_all(
+    list(
+      base_table,
+      delivery_agents_explorer,
+      age_groups,
+      target_groups,
+      realm_languages,
+      outcomes
+    ),
+    by = "id",
+    type = "left"
+  ) %>%
   mutate(
-    submission_info = paste0("Data submitted by ", name, " on ", stamp("Sunday, May 1 2000 at 1.30pm")(submission_time %>% with_tz("NZ"))),
-    duration_info = paste0(delivery_datetime, " for ", what_was_the_duration_of_the_session_to_the_nearest_half_an_hour),
+    age_group = word(age_group, 1),
+    outcome = case_when(
+      word(outcome, 1) == "Kia" ~ "Māori",
+      is.na(outcome) == FALSE ~ word(outcome, 1)
+    ),
+    delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)
+  ) %>%
+  pivot_wider(names_from = age_group, values_from = age_group) %>%
+  pivot_wider(names_from = outcome,
+              values_from = outcome,
+              names_repair = "unique") %>%
+  mutate(
+    submission_info = paste0(
+      "Data submitted by ",
+      name,
+      " on ",
+      stamp("Sunday, May 1 2000 at 1.30pm")(submission_time %>% with_tz("NZ"))
+    ),
+    duration_info = paste0(
+      delivery_datetime,
+      " for ",
+      what_was_the_duration_of_the_session_to_the_nearest_half_an_hour
+    ),
     staff_info = case_when(
-      is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",
-      !is.na(how_many_connected_communities_staff_delivered_the_session) ~ paste0(how_many_connected_communities_staff_delivered_the_session, " Connected Communities staff delivered this session")
+      is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",!is.na(how_many_connected_communities_staff_delivered_the_session) ~ paste0(
+        how_many_connected_communities_staff_delivered_the_session,
+        " Connected Communities staff delivered this session"
+      )
     )
-    ) %>% 
-  rowwise() %>% 
+  ) %>%
+  rowwise() %>%
   mutate(
-        offline_participants = sum(c(how_many_adults_aged_18_attended_in_person_at_this_session, how_many_children_aged_under_18_attended_in_person_at_this_session), na.rm = TRUE),
-    online_participants = sum(c(how_many_adults_aged_18_watched_the_live_online_broadcast_of_this_session, how_many_children_aged_under_18_watched_the_live_online_broadcast_of_this_session, how_many_people_watched_the_live_online_broadcast_of_this_session), na.rm = TRUE)
-  ) %>% 
-  ungroup() %>% 
-  select(-c(
-    "NA",
-    submission_time,
-    email,
-    starts_with("how_many_"),
-    what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
-    in_which_local_board_was_the_session_delivered,
-    sublocation,
-    in_person:online,
-    realm_language
-    )) %>% 
-  unique() %>% 
-  add_column(!!!cols[!names(cols) %in% names(.)]) %>% 
-    mutate(across(c("Seniors", "Adults", "Youths", "Primary", "Pre-school"), ~case_when(
-    is.na(.) ~ "\u2718",
-    !is.na(.) ~ "\u2713"
-  ))) %>% 
-  select(id, duration_info, what_was_the_name_of_the_session, internal_delivery_teams, location, "Pre-school", Primary, Youths, Adults, Seniors, target_group, everything())
+    offline_participants = sum(
+      c(
+        how_many_adults_aged_18_attended_in_person_at_this_session,
+        how_many_children_aged_under_18_attended_in_person_at_this_session
+      ),
+      na.rm = TRUE
+    ),
+    online_participants = sum(
+      c(
+        how_many_adults_aged_18_watched_the_live_online_broadcast_of_this_session,
+        how_many_children_aged_under_18_watched_the_live_online_broadcast_of_this_session,
+        how_many_people_watched_the_live_online_broadcast_of_this_session
+      ),
+      na.rm = TRUE
+    )
+  ) %>%
+  ungroup() %>%
+  select(
+    -c(
+      contains("..."),
+      submission_time,
+      email,
+      starts_with("how_many_"),
+      what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
+      in_which_local_board_was_the_session_delivered,
+      sublocation,
+      in_person:online,
+      realm_language
+    )
+  ) %>%
+  unique() %>%
+  add_column(!!!cols[!names(cols) %in% names(.)]) %>%
+  mutate(across(
+    c(
+      "Seniors",
+      "Adults",
+      "Youths",
+      "Primary",
+      "Pre-school",
+      "Literacy",
+      "Māori",
+      "Environment",
+      "Legacy",
+      "Talanoa",
+      "Tātou"
+    ),
+    ~ case_when(is.na(.) ~ "\u2718",!is.na(.) ~ "\u2713")
+  )) %>%
+  select(
+    id,
+    duration_info,
+    what_was_the_name_of_the_session,
+    internal_delivery_teams,
+    location,
+    "Pre-school",
+    Primary,
+    Youths,
+    Adults,
+    Seniors,
+    target_group,
+    "Literacy",
+    "Māori",
+    "Environment",
+    "Legacy",
+    "Talanoa",
+    "Tātou",
+    everything()
+  )
 
-comments_table <- data_explorer_data %>% 
-  select(id, Comments = please_use_the_box_below_to_write_any_further_comments_you_wish_to_make_about_this_session) %>% 
-  mutate(Comments = case_when(
-    is.na(Comments) ~ "No comments",
-    !is.na(Comments) ~ Comments
-  ))
+comments_table <- data_explorer_data %>%
+  select(id, Comments = please_use_the_box_below_to_write_any_further_comments_you_wish_to_make_about_this_session) %>%
+  mutate(Comments = case_when(is.na(Comments) ~ "No comments",!is.na(Comments) ~ Comments))
 
 data_explorer <- SharedData$new(data_explorer_data)
 
@@ -109,6 +191,7 @@ with_tooltip <- function(value, tooltip) {
 
 
 ```{r data_explorer_table, echo=FALSE, warning=FALSE}
+
 
 bscols(
   widths = c(2, 10),
@@ -205,11 +288,9 @@ bscols(
         ),
         cell = function(value, index) {
           staff <- data_explorer$data()$staff_info[index]
-          tagList(
-            div(style = list(fontWeight = 600), value),
-            
-            div(style = list(fontSize = 9), staff)
-          )
+          tagList(div(style = list(fontWeight = 600), value),
+                  
+                  div(style = list(fontSize = 9), staff))
         }
       ),
       
@@ -289,6 +370,80 @@ bscols(
       # **Target Group(s)**
       target_group = colDef(name = "Target Group(s)"),
       
+      # **Outcome(s)**
+      "Literacy" = colDef(
+        header = with_tooltip("Literacy", "We support communities to thrive"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Māori" = colDef(
+        header = with_tooltip("Māori", "Kia ora Tāmaki Makaurau Māori outcomes framework"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Environment" = colDef(
+        header = with_tooltip("Environment", "We ensure our future"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Legacy" = colDef(
+        header = with_tooltip("Legacy", "We preserve our past"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Talanoa" = colDef(
+        header = with_tooltip("Tanalona", "Talanoa Pasifika framework"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      "Tātou" = colDef(
+        header = with_tooltip("Tātou Belonging", "We bring communities together"),
+        style = function(value) {
+          color <-
+            if (value == "\u2718") {
+              "#e00000"
+            } else if (value == "\u2713") {
+              "#008000"
+            }
+          list(fontWeight = 600, color = color)
+        }
+      ),
+      
       # **Theme**
       which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of = colDef(
         name = "Theme",
@@ -330,14 +485,26 @@ bscols(
       what_was_the_format_of_the_session = colDef(show = FALSE),
       staff_info = colDef(show = FALSE)
     ),
-    columnGroups = list(colGroup(
-      name = "Target Age Group(s)",
-      columns = c("Pre-school", "Primary", "Youths", "Adults", "Seniors")
-    )),
+    columnGroups = list(
+      colGroup(
+        name = "Target Age Group(s)",
+        columns = c("Pre-school", "Primary", "Youths", "Adults", "Seniors")
+      ),
+      colGroup(
+        name = "Outcome(s)",
+        columns = c(
+          "Literacy",
+          "Māori",
+          "Environment",
+          "Legacy",
+          "Talanoa",
+          "Tātou"
+        )
+      )
+    ),
     highlight = TRUE
   )
 )
-
 
 ```
 

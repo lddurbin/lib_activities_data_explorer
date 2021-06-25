@@ -29,5 +29,6 @@ base_table <- df %>%
 age_groups <- multichoice_splitting(df, what_was_the_target_age_group_for_this_session, age_group)
 target_groups <- multichoice_splitting(df, which_of_these_groups_was_the_session_designed_to_benefit, target_group)
 realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_delivered_in, realm_language)
+outcomes <- multichoice_splitting(df, which_of_the_following_outcomes_did_the_session_deliver_against, outcome)
 
 source("delivery_agents.R")
