@@ -192,7 +192,7 @@ with_tooltip <- function(value, tooltip) {
 ```
 
 
-```{r data_explorer_table, echo=FALSE, warning=FALSE}
+```{r data_explorer_table, echo=FALSE, warning=FALSE, include=FALSE}
 
 
 bscols(
