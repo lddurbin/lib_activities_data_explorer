@@ -80,7 +80,7 @@ data_explorer_data <-
       word(outcome, 1) == "Kia" ~ "Māori",
       is.na(outcome) == FALSE ~ word(outcome, 1)
     ),
-    delivery_datetime = stamp("Sunday, May 1 2000 at 1.30pm")(delivery_datetime)
+    delivery_monthYear = format(as_date(delivery_datetime), "%B %Y") %>% factor(levels = paste(month.name, rep(2020:2025, each=12)))
   ) %>%
   pivot_wider(names_from = age_group, values_from = age_group) %>%
   pivot_wider(names_from = outcome,
@@ -197,7 +197,8 @@ bscols(
   widths = c(2, 10),
   list(
     filter_select("location", "Delivery Location", data_explorer, ~ location),
-    filter_select("name", "Data Provider", data_explorer, ~ name)
+    filter_select("name", "Data Provider", data_explorer, ~ name),
+    filter_select("delivery_datetime", "Session Date", data_explorer, ~ delivery_monthYear)
   ),
   reactable(
     data_explorer,
@@ -483,7 +484,8 @@ bscols(
       please_use_the_box_below_to_write_any_further_comments_you_wish_to_make_about_this_session = colDef(show = FALSE),
       delivery_datetime = colDef(show = FALSE),
       what_was_the_format_of_the_session = colDef(show = FALSE),
-      staff_info = colDef(show = FALSE)
+      staff_info = colDef(show = FALSE),
+      delivery_monthYear = colDef(show = FALSE)
     ),
     columnGroups = list(
       colGroup(
