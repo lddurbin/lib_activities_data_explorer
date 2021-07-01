@@ -35,7 +35,9 @@ source("data_prep.R")
 
 Here you can view data submitted via the Programmes and Events form since **July 1, 2021**.
 
-The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**.
+<!-- The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**. -->
+
+Data will first appear here on **9 July**. The data will be refreshed weekly on Fridays, as well as on the first working day of each month.
 
 ```{r data_explorer_prep, echo=FALSE, message=FALSE}
 
