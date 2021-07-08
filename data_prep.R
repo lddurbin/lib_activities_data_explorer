@@ -8,12 +8,13 @@ source("functions.R")
 
 files <- dir_ls("data", regexp = "\\.xlsx$")
 
-# Remove yes/no questions, morning/afternoon/evening, CC staff type.
+# Remove yes/no questions, morning/afternoon/evening, CC staff type, test data entered by Lee
 df <- files %>% 
   map_dfr(read_excel) %>% 
   select(-c(starts_with(c("Do you know", "Can you", "Did the session", "How would you describe", "Was the session")))) %>% 
   clean_names() %>% 
-  mutate(id = as.character(id))
+  mutate(id = as.character(id)) %>% 
+  filter(email != "durbinl@aklc.govt.nz")
 
 # Online/offline columns, concatenate locations into 1 column, datetime column
 base_table <- df %>% 
