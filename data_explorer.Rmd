@@ -157,6 +157,7 @@ data_explorer_data <-
     ),
     ~ case_when(is.na(.) ~ "\u2718",!is.na(.) ~ "\u2713")
   )) %>%
+  filter(!is.na(delivery_datetime)) %>% 
   select(
     id,
     duration_info,
