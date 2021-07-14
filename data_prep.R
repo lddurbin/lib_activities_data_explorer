@@ -23,8 +23,14 @@ base_table <- df %>%
   unite("location", starts_with("where_in"), na.rm = TRUE, remove = TRUE) %>% 
   unite("sublocation", c(18:20), na.rm = TRUE, remove = TRUE) %>% 
   unite("delivery_time", starts_with("at_what_time"), na.rm = TRUE, remove = TRUE) %>% 
-  mutate(delivery_datetime = parse_date_time(paste(when_was_the_session_delivered, delivery_time), c("Ymd HMp", "Ymd Hp")), .keep = "unused") %>% 
-  mutate(across(c(3, 12:14, 16, 21), as.factor))
+  mutate(delivery_datetime = parse_date_time(paste(when_was_the_session_delivered, delivery_time), c("Ymd HMp", "Ymd Hp")), .keep = "unused") %>%
+  rowwise() %>% 
+  mutate(location = case_when(
+    str_length(sublocation) < 2 ~ location,
+    str_length(sublocation) > 1 ~ sublocation
+  ), .keep = "unused") %>% 
+  ungroup() %>% 
+  mutate(across(c(3, 12:13, 16, 20), as.factor))
 
 # one row per selection per session: age groups
 age_groups <- multichoice_splitting(df, what_was_the_target_age_group_for_this_session, age_group)

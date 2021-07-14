@@ -134,7 +134,6 @@ data_explorer_data <-
       starts_with("how_many_"),
       what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
       in_which_local_board_was_the_session_delivered,
-      sublocation,
       in_person:online,
       realm_language
     )
