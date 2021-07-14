@@ -8,6 +8,10 @@ source("functions.R")
 
 files <- dir_ls("data", regexp = "\\.xlsx$")
 
+normalised_locations <- read_csv("data/expected_locations.csv", col_types = "cc") %>%
+  as_tibble() %>% 
+  select(location)
+
 # Remove yes/no questions, morning/afternoon/evening, CC staff type, test data entered by Lee
 df <- files %>% 
   map_dfr(read_excel) %>% 
@@ -28,7 +32,11 @@ base_table <- df %>%
   mutate(location = case_when(
     str_length(sublocation) < 2 ~ location,
     str_length(sublocation) > 1 ~ sublocation
-  ), .keep = "unused") %>% 
+  ),
+  location = case_when(
+    (location %in% normalised_locations$location) == TRUE ~ location,
+    (location %in% normalised_locations$location) == FALSE ~ "Other"),
+  .keep = "unused") %>% 
   ungroup() %>% 
   mutate(across(c(3, 12:13, 16, 20), as.factor))
 
