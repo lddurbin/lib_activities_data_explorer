@@ -1,3 +1,4 @@
 *
 !.gitignore
 !expected_column_headers.csv
+!expected_locations.csv
