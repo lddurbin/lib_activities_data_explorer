@@ -41,16 +41,18 @@ The data will be refreshed weekly on Fridays, as well as on the first working da
 
 ```{r data_explorer_prep, echo=FALSE, message=FALSE}
 
-
 # Create these columns if they don't exist
 cols <- read_csv("data/expected_column_headers.csv") %>%
   as_tibble(.rows = NULL) %>%
   add_row()
 
-concat_libs <-
-  delivery_agents %>% concat_rows(delivery_library_names)
+concat_libs <- delivery_agents %>%
+  concat_rows(delivery_library_names) %>% 
+  mutate(delivery_library_names = str_replace_all(delivery_library_names, "&", "and"))
 
-concat_units <- delivery_agents %>% concat_rows(unit_names)
+concat_units <- delivery_agents %>%
+  concat_rows(unit_names) %>% 
+  mutate(unit_names = str_replace_all(unit_names, "&", "and"))
 
 delivery_agents_explorer <-
   left_join(concat_libs, concat_units) %>%
@@ -78,6 +80,7 @@ data_explorer_data <-
   ) %>%
   mutate(
     age_group = word(age_group, 1),
+    location = str_replace_all(location, "&", "and"),
     outcome = case_when(
       word(outcome, 1) == "Kia" ~ "Māori",
       is.na(outcome) == FALSE ~ word(outcome, 1)
@@ -197,13 +200,18 @@ with_tooltip <- function(value, tooltip) {
 
 bscols(
   widths = c(2, 10),
+  
+  # FILTERS
   list(
+    filter_select("internal_delivery_teams", "Connected Community Delivery Team", data_explorer, ~ internal_delivery_teams),
     filter_select("location", "Delivery Location", data_explorer, ~ location),
     filter_select("name", "Data Provider", data_explorer, ~ name),
     filter_select("delivery_datetime", "Session Date", data_explorer, ~ delivery_monthYear)
   ),
+  
   reactable(
     data_explorer,
+    height = 800,
     showPageInfo = FALSE,
     theme = reactableTheme(
       # Vertically center cells
@@ -235,6 +243,7 @@ bscols(
       # **ID**
       id = colDef(
         name = "ID",
+        headerClass = "sticky left-col-1",
         cell = function(value, index) {
           submitted <- data_explorer$data()$submission_info[index]
           tagList(div(style = list(fontWeight = 600), value),
@@ -257,6 +266,7 @@ bscols(
           "Date",
           "Date and time that the activity started, and the duration of the session"
         ),
+        headerClass = "sticky left-col-1",
         aggregate = "unique",
         style =
           JS(
@@ -269,6 +279,7 @@ bscols(
       # **Description**
       what_was_the_name_of_the_session = colDef(
         name = "Description",
+        headerClass = "sticky left-col-1",
         cell = function(value, index) {
           format <-
             data_explorer$data()$what_was_the_format_of_the_session[index]
@@ -289,6 +300,7 @@ bscols(
           "Connected Communities Delivery Agent(s)",
           "A list of any Connected Communities staff who delivered the activity."
         ),
+        headerClass = "sticky left-col-1",
         cell = function(value, index) {
           staff <- data_explorer$data()$staff_info[index]
           tagList(div(style = list(fontWeight = 600), value),
@@ -300,6 +312,7 @@ bscols(
       # *Location**
       location = colDef(
         name = "Delivery Location",
+        headerClass = "sticky left-col-1",
         style =
           JS(
             "function(rowInfo, colInfo, state) {
@@ -311,6 +324,7 @@ bscols(
       # **Target Age(s)**
       "Pre-school" = colDef(
         header = with_tooltip("Pre-school", "Targeted towards those aged under 5"),
+        headerClass = "sticky left-col-1",
         style = function(value) {
           color <-
             if (value == "\u2718") {
@@ -371,11 +385,15 @@ bscols(
       ),
       
       # **Target Group(s)**
-      target_group = colDef(name = "Target Group(s)"),
+      target_group = colDef(
+        name = "Target Group(s)",
+        headerClass = "sticky left-col-1"
+        ),
       
       # **Outcome(s)**
       "Literacy" = colDef(
         header = with_tooltip("Literacy", "We support communities to thrive"),
+        headerClass = "sticky left-col-1",
         style = function(value) {
           color <-
             if (value == "\u2718") {
@@ -423,7 +441,7 @@ bscols(
         }
       ),
       "Talanoa" = colDef(
-        header = with_tooltip("Tanalona", "Talanoa Pasifika framework"),
+        header = with_tooltip("Talanoa", "Talanoa Pasifika framework"),
         style = function(value) {
           color <-
             if (value == "\u2718") {
@@ -450,6 +468,7 @@ bscols(
       # **Theme**
       which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of = colDef(
         name = "Theme",
+        headerClass = "sticky left-col-1",
         style =
           JS(
             "function(rowInfo, colInfo, state) {
@@ -461,6 +480,7 @@ bscols(
       # *Offline Participants**
       offline_participants = colDef(
         name = "In-Person Participants",
+        headerClass = "sticky left-col-1",
         style =
           JS(
             "function(rowInfo, colInfo, state) {
@@ -472,6 +492,7 @@ bscols(
       # *Online Participants**
       online_participants = colDef(
         name = "Online Participants",
+        headerClass = "sticky left-col-1",
         style =
           JS(
             "function(rowInfo, colInfo, state) {
