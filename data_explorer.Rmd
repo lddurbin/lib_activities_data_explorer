@@ -203,7 +203,7 @@ bscols(
   
   # FILTERS
   list(
-    filter_select("internal_delivery_teams", "Connected Community Delivery Team", data_explorer, ~ internal_delivery_teams),
+    filter_select("internal_delivery_teams", "Connected Communities Delivery Team", data_explorer, ~ internal_delivery_teams),
     filter_select("location", "Delivery Location", data_explorer, ~ location),
     filter_select("name", "Data Provider", data_explorer, ~ name),
     filter_select("delivery_datetime", "Session Date", data_explorer, ~ delivery_monthYear)
