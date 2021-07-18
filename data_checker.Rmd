@@ -41,6 +41,43 @@ The data will be refreshed on the first working day of each month.
 
 ```{r data_checker_prep, echo=FALSE, message=FALSE}
 
-left_join(base_table, delivery_agents)
+base_table <- base_table %>% 
+  mutate(submission_date = as_date(submission_time), location = as.character(location)) %>% 
+  select(id, submission_date, location)
+
+delivery_agents <- delivery_agents %>% 
+  rowwise() %>% 
+  mutate(delivery_library_names = case_when(
+    is.na(delivery_library_names) ~ "Other AC staff or external",
+    !is.na(delivery_library_names) ~ delivery_library_names
+  )) %>% 
+  ungroup() %>% 
+  select(id, delivery_library_names)
+
+checker_data <- left_join(base_table, delivery_agents, by = "id") %>% 
+  rowwise() %>% 
+  mutate(delivery_agent_or_location = case_when(
+    location == "Other" ~ delivery_library_names,
+    delivery_library_names == "Other AC staff or external" ~ location,
+    location != "Other" ~ location,
+    delivery_library_names != "Other AC staff or external" ~ delivery_library_names
+  )) %>% 
+  ungroup() %>% 
+  mutate(submission_month = paste0(month(submission_date, label = TRUE, abbr = FALSE), " ", year(submission_date)))
+
+monthly_entries <- checker_data %>% 
+  count(submission_month, delivery_agent_or_location, name = "monthly_entries")
+
+latest_entry <- checker_data %>% 
+  group_by(submission_month, delivery_agent_or_location) %>% 
+  summarise(latest_entry = max(submission_date))
+
 
 ```
+
+```{r data_checker_table, echo=FALSE, warning=FALSE, include=TRUE}
+
+
+
+```
+
