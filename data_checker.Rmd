@@ -39,7 +39,7 @@ The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastMo
 
 The data will be refreshed on the first working day of each month.
 
-```{r data_checker_prep, echo=FALSE, message=FALSE}
+```{r data_checker_prep, echo=FALSE, message=FALSE, warning=FALSE, message=FALSE}
 
 base_table <- base_table %>% 
   mutate(submission_date = as_date(submission_time), location = as.character(location)) %>% 
@@ -78,7 +78,8 @@ latest_entry <- checker_data %>%
 
 ```{r data_checker_table, echo=FALSE, warning=FALSE, include=TRUE}
 
-data_checker <- left_join(monthly_entries, latest_entry, by = c("submission_month", "delivery_agent_or_location"))
+data_checker <- left_join(monthly_entries, latest_entry, by = c("submission_month", "delivery_agent_or_location")) %>% 
+  select(submission_month, delivery_agent_or_location, latest_entry, monthly_entries)
 
 bscols(
   reactable(
@@ -97,14 +98,25 @@ bscols(
     ),
     
     columns = list(
+      
+      #SUBMISSION MONTH
+      submission_month = colDef(
+        name = "Submission Month"
+      ),
+      
+      #LOCATION OR DELIVERY AGENT
       delivery_agent_or_location = colDef(
-        headerClass = "sticky left-col-1",
-        style =
-          JS(
-            "function(rowInfo, colInfo, state) {
-          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
-      }"
-          )
+        name = "Location or Delivery Agent"
+      ),
+      
+      #LATEST ENTRY
+      latest_entry = colDef(
+        name = "Latest Entry"
+      ),
+      
+      #MONTHLY ENTRIES
+      monthly_entries = colDef(
+        name = "Monthly Entries"
       )
     )
   )
