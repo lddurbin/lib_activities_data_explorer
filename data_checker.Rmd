@@ -1,0 +1,46 @@
+---
+title: "Programmes and Events Data Checker"
+author: "Lee Durbin"
+date: "19/07/2021"
+output:
+  html_document
+theme: lumen
+always_allow_html: true
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+<img src="https://www.aucklandcouncil.govt.nz/_layouts/15/ACWeb/images/ac-logo-large.svg" alt="Auckland Council logo" title="Auckland Council" style="position:absolute;top:10px;right:10px;width:200px" />
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("reactable", warn.conflicts = FALSE)
+library("R.utils", warn.conflicts = FALSE)
+library("crosstalk", warn.conflicts = FALSE)
+library("htmltools", warn.conflicts = FALSE)
+library("tippy", warn.conflicts = FALSE)
+
+source("data_prep.R")
+
+```
+
+## Data Checker
+
+Here you can view month-by-month summary information about data entry agent activity.
+
+The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**.
+
+The data will be refreshed on the first working day of each month.
+
+```{r data_checker_prep, echo=FALSE, message=FALSE}
+
+left_join(base_table, delivery_agents)
+
+```
