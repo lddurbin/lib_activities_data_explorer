@@ -70,14 +70,45 @@ monthly_entries <- checker_data %>%
 
 latest_entry <- checker_data %>% 
   group_by(submission_month, delivery_agent_or_location) %>% 
-  summarise(latest_entry = max(submission_date))
+  summarise(latest_entry = max(submission_date), .groups = "drop") %>% 
+  mutate(latest_entry = stamp("19 July, 2021", order = "dmy")(latest_entry))
 
 
 ```
 
 ```{r data_checker_table, echo=FALSE, warning=FALSE, include=TRUE}
 
+data_checker <- left_join(monthly_entries, latest_entry, by = c("submission_month", "delivery_agent_or_location"))
 
+bscols(
+  reactable(
+    data_checker,
+    height = 800,
+    defaultPageSize = 20,
+    defaultSorted = list(latest_entry = "asc"),
+    showPageInfo = FALSE,
+    theme = reactableTheme(
+      # Vertically center cells
+      cellStyle = list(
+        display = "flex",
+        flexDirection = "column",
+        justifyContent = "center"
+      )
+    ),
+    
+    columns = list(
+      delivery_agent_or_location = colDef(
+        headerClass = "sticky left-col-1",
+        style =
+          JS(
+            "function(rowInfo, colInfo, state) {
+          var prevRow = state.pageRows[rowInfo.viewIndex - 1]
+      }"
+          )
+      )
+    )
+  )
+)
 
 ```
 
