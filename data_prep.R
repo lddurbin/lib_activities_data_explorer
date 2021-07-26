@@ -14,7 +14,7 @@ normalised_locations <- read_csv("data/expected_locations.csv", col_types = "cc"
 
 # Remove yes/no questions, morning/afternoon/evening, CC staff type, test data entered by Lee
 df <- files %>% 
-  map_dfr(read_excel) %>% 
+  map_dfr(read_excel, guess_max = 1048576) %>% 
   select(-c(starts_with(c("Do you know", "Can you", "Did the session", "How would you describe", "Was the session")))) %>% 
   clean_names() %>% 
   mutate(id = as.character(id)) %>% 
