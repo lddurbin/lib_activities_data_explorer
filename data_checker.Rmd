@@ -73,6 +73,8 @@ latest_entry <- checker_data %>%
   summarise(latest_entry = max(submission_date), .groups = "drop") %>% 
   mutate(latest_entry = stamp("19 July, 2021", order = "dmy")(latest_entry))
 
+expected_teams <- read_csv("data/expected_teams.csv", col_types = "c")
+
 
 ```
 
@@ -124,3 +126,4 @@ bscols(
 
 ```
 
+The following teams have not entered data through the form: `r dplyr::setdiff(expected_teams$delivery_team, data_checker$delivery_agent_or_location)`
