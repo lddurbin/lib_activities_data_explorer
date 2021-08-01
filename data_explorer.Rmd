@@ -138,7 +138,8 @@ data_explorer_data <-
       what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
       in_which_local_board_was_the_session_delivered,
       in_person:online,
-      realm_language
+      realm_language,
+      outcome_attribute
     )
   ) %>%
   unique() %>%
