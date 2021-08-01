@@ -40,7 +40,7 @@ base_table <- df %>%
   ungroup() %>% 
   mutate(across(c(3, 12:13, 16, 20), as.factor))
 
-# one row per selection per session: age groups
+# one row per selection per session
 age_groups <- multichoice_splitting(df, what_was_the_target_age_group_for_this_session, age_group)
 target_groups <- multichoice_splitting(df, which_of_these_groups_was_the_session_designed_to_benefit, target_group)
 realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_delivered_in, realm_language)
