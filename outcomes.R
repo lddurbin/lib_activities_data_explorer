@@ -24,4 +24,8 @@ pasifika_attributes <- multichoice_splitting(df, what_sort_of_talanoa_session_wa
 outcome_attributes <- bind_rows(literacy_attributes, maori_attributes, pasifika_attributes)
 
 outcomes <- multichoice_splitting(df, which_of_the_following_outcomes_did_the_session_deliver_against, outcome) %>% 
+  mutate(outcome = case_when(
+    outcome == "Legacy" ~ "Heritage",
+    !is.na(outcome) ~ outcome
+  )) %>% 
   left_join(outcome_attributes, by = c("id", "outcome"))
