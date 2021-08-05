@@ -21,7 +21,6 @@ df <- files %>%
   filter(email != "durbinl@aklc.govt.nz")
 
 # Online/offline columns, concatenate locations into 1 column, datetime column
-# CONVERT DURATION INTO TIME
 base_table <- df %>% 
   select(-c(42:44, 46:70, 72:77)) %>%
   mutate(in_person = str_detect(how_was_the_session_delivered, "person"), online = str_detect(how_was_the_session_delivered, "Online"), .keep = "unused") %>% 
@@ -30,6 +29,7 @@ base_table <- df %>%
   unite("delivery_time", starts_with("at_what_time"), na.rm = TRUE, remove = TRUE) %>% 
   mutate(
     delivery_datetime = parse_date_time(paste(when_was_the_session_delivered, delivery_time), c("Ymd HMp", "Ymd Hp")),
+    what_was_the_duration_of_the_session_to_the_nearest_half_an_hour = time_length(str_remove(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour, "and "), "minute"),
     what_was_the_format_of_the_session = case_when(
       !what_was_the_format_of_the_session %in% unlist(c("Book a Librarian", "Class or workshop", "Community event", "Club", "Live performance", "Pre-school activity", "Promotion or roadshow", "Talk")) ~ "Other",
       !is.na(what_was_the_format_of_the_session) ~ what_was_the_format_of_the_session

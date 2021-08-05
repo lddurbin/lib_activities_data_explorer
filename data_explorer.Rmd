@@ -101,7 +101,8 @@ data_explorer_data <-
     duration_info = paste0(
       delivery_datetime,
       " for ",
-      what_was_the_duration_of_the_session_to_the_nearest_half_an_hour
+      what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
+      " minutes"
     ),
     staff_info = case_when(
       is.na(how_many_connected_communities_staff_delivered_the_session) ~ "Connected Communities staff weren't involved in delivering this session",!is.na(how_many_connected_communities_staff_delivered_the_session) ~ paste0(
