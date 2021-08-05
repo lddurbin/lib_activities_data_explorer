@@ -65,6 +65,8 @@ delivery_agents_explorer <-
 
 target_groups <- target_groups %>% concat_rows(target_group)
 
+outcomes <- outcomes %>% select(1:2) %>% unique()
+
 data_explorer_data <-
   plyr::join_all(
     list(
@@ -139,8 +141,7 @@ data_explorer_data <-
       what_was_the_duration_of_the_session_to_the_nearest_half_an_hour,
       in_which_local_board_was_the_session_delivered,
       in_person:online,
-      realm_language,
-      outcome_attribute
+      realm_language
     )
   ) %>%
   unique() %>%
