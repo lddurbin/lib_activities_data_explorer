@@ -33,17 +33,19 @@ source("data_prep.R")
 
 ## Data Checker
 
-Here you can view month-by-month summary information about data entry agent activity.
+Here you can view summary information about data entry agent activity.
 
-The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**.
-
-The data will be refreshed on the first working day of each month.
+This data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**. The data will be refreshed on the first working day of each month.
 
 ```{r data_checker_prep, echo=FALSE, message=FALSE, warning=FALSE, message=FALSE}
 
-base_table <- base_table %>% 
+base_table_for_checker <- base_table_for_checker %>% 
   mutate(submission_date = as_date(submission_time), location = as.character(location)) %>% 
-  select(id, submission_date, location)
+  select(id, submission_date, location) %>% 
+  mutate(location = case_when(
+    (location %in% normalised_locations$location) == TRUE ~ location,
+    (location %in% normalised_locations$location) == FALSE ~ "Other")
+  )
 
 delivery_agents <- delivery_agents %>% 
   rowwise() %>% 
@@ -54,7 +56,7 @@ delivery_agents <- delivery_agents %>%
   ungroup() %>% 
   select(id, delivery_library_names)
 
-checker_data <- left_join(base_table, delivery_agents, by = "id") %>% 
+checker_data <- left_join(base_table_for_checker, delivery_agents, by = "id") %>% 
   rowwise() %>% 
   mutate(delivery_agent_or_location = case_when(
     location == "Other" ~ delivery_library_names,
@@ -62,26 +64,42 @@ checker_data <- left_join(base_table, delivery_agents, by = "id") %>%
     location != "Other" ~ location,
     delivery_library_names != "Other AC staff or external" ~ delivery_library_names
   )) %>% 
-  ungroup() %>% 
-  mutate(submission_month = paste0(month(submission_date, label = TRUE, abbr = FALSE), " ", year(submission_date)))
+  ungroup()
 
 monthly_entries <- checker_data %>% 
-  count(submission_month, delivery_agent_or_location, name = "monthly_entries")
+  mutate(
+    days_since_submission = interval(submission_date, today()) %>% time_length("days"),
+    days_since_submission = case_when(
+      days_since_submission <= 30 ~ "Last 30 days",
+      (days_since_submission > 30 & days_since_submission <= 60) ~ "From 31 to 60 days",
+      days_since_submission > 60 ~ "More than 60 days"
+    )
+  ) %>% 
+  filter(days_since_submission != "More than 60 days") %>% 
+  count(delivery_agent_or_location, days_since_submission, name = "submissions")
+  
+change_in_entries <- monthly_entries %>% 
+  pivot_wider(names_from = "days_since_submission", values_from = "submissions", values_fill = 0) %>% 
+  clean_names() %>% 
+  mutate(
+    change_num = last_30_days - from_31_to_60_days
+    )
 
-latest_entry <- checker_data %>% 
-  group_by(submission_month, delivery_agent_or_location) %>% 
+latest_entry_data <- checker_data %>% 
+  group_by(delivery_agent_or_location) %>% 
   summarise(latest_entry = max(submission_date), .groups = "drop") %>% 
-  mutate(latest_entry = stamp("19 July, 2021", order = "dmy")(latest_entry))
+  mutate(latest_entry_formatted = stamp("19 July, 2021", order = "dmy")(latest_entry))
 
 expected_teams <- read_csv("data/expected_teams.csv", col_types = "c")
 
+data_checker <- left_join(change_in_entries, latest_entry_data, by = c("delivery_agent_or_location")) %>% 
+  select(delivery_agent_or_location, latest_entry_formatted, everything())
 
 ```
 
-```{r data_checker_table, echo=FALSE, warning=FALSE, include=TRUE}
+The following teams have not entered data through the form: **`r dplyr::setdiff(expected_teams$delivery_team, data_checker$delivery_agent_or_location)`**
 
-data_checker <- left_join(monthly_entries, latest_entry, by = c("submission_month", "delivery_agent_or_location")) %>% 
-  select(submission_month, delivery_agent_or_location, latest_entry, monthly_entries)
+```{r data_checker_table, echo=FALSE, warning=FALSE, include=TRUE}
 
 bscols(
   reactable(
@@ -101,29 +119,36 @@ bscols(
     
     columns = list(
       
-      #SUBMISSION MONTH
-      submission_month = colDef(
-        name = "Submission Month"
-      ),
-      
       #LOCATION OR DELIVERY AGENT
       delivery_agent_or_location = colDef(
         name = "Location or Delivery Agent"
       ),
       
       #LATEST ENTRY
-      latest_entry = colDef(
+      latest_entry_formatted = colDef(
         name = "Latest Entry"
       ),
       
-      #MONTHLY ENTRIES
-      monthly_entries = colDef(
-        name = "Monthly Entries"
-      )
+      #MONTHLY ENTRIES: LAST 30 DAYS
+      last_30_days = colDef(
+        name = "Entries (last 30 days)"
+      ),
+      
+      #MONTHLY ENTRIES: 31 to 60 days
+      from_31_to_60_days = colDef(
+        name = "Entries (31 to 60 days)"
+      ),
+      
+      #CHANGE IN MONTHLY ENTRIES
+      change_num = colDef(
+        name = "Change"
+      ),
+      
+      #HIDDEN COLUMNS
+      latest_entry = colDef(show = FALSE)
     )
   )
 )
 
 ```
 
-The following teams have not entered data through the form: `r dplyr::setdiff(expected_teams$delivery_team, data_checker$delivery_agent_or_location)`

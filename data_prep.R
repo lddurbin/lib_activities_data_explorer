@@ -21,7 +21,7 @@ df <- files %>%
   filter(email != "durbinl@aklc.govt.nz")
 
 # Online/offline columns, concatenate locations into 1 column, datetime column
-base_table <- df %>% 
+base_table_for_checker <- df %>% 
   select(-c(42:44, 46:70, 72:77)) %>%
   mutate(in_person = str_detect(how_was_the_session_delivered, "person"), online = str_detect(how_was_the_session_delivered, "Online"), .keep = "unused") %>% 
   unite("location", starts_with("where_in"), na.rm = TRUE, remove = TRUE) %>% 
@@ -35,7 +35,9 @@ base_table <- df %>%
       !is.na(what_was_the_format_of_the_session) ~ what_was_the_format_of_the_session
     ),
     .keep = "unused"
-    ) %>%
+    )
+
+base_table <- base_table_for_checker %>% 
   rowwise() %>% 
   mutate(location = case_when(
     str_length(sublocation) < 2 ~ location,
