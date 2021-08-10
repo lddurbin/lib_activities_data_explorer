@@ -15,3 +15,16 @@ concat_rows <- function(data, col_to_concat) {
     distinct({{col_to_concat}}) %>% 
     summarise({{col_to_concat}} := str_c({{col_to_concat}}, collapse = " --- "), .groups = "drop")
 }
+
+# For a given group, sum the number of rows (i.e. sessions), adult participants, child participants, and duration
+summarise_data <- function(df, group) {
+  df %>%
+    distinct(id, outcome, .keep_all = TRUE) %>% 
+    group_by({{group}}) %>%
+    summarise(
+      sessions = n_distinct(id),
+      participants_adult = sum(how_many_adults_aged_18_attended_in_person_at_this_session, na.rm = TRUE),
+      participants_children = sum(how_many_children_aged_under_18_attended_in_person_at_this_session, na.rm = TRUE),
+      duration = sum(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour, na.rm = TRUE)/60
+    )
+}
