@@ -25,12 +25,21 @@ joined_data %>%
 outcome_data <- joined_data %>% 
   filter(outcome == "Literacy")
 
-# How many sessions delivered against a given outcome area, how many people attended them, and how many hours were spent delivering them?
+# Stats for sessions that delivered against a given outcome area
 outcome_data %>% 
   distinct(id, outcome, .keep_all = TRUE) %>% 
   summarise_data(outcome)
 
-# How many sessions delivered against a given outcome?
+# Stats for sessions that delivered against this outcome area that also delivered against other outcome areas
+outcomes %>% 
+  filter(outcome != "Literacy") %>% 
+  right_join(outcome_data %>% select(-outcome), "id") %>% 
+  filter(!is.na(outcome)) %>% 
+  distinct(id, outcome, .keep_all = TRUE) %>% 
+  summarise_data(outcome)
+
+
+# Stats for sessions that delivered against a given outcome
 outcome_data %>%
   distinct(id, outcome, outcome_attribute, .keep_all = TRUE) %>% 
   group_by(outcome_attribute) %>%
@@ -78,3 +87,13 @@ outcome_data %>%
 outcome_data %>% 
   filter(!is.na(realm_language)) %>% 
   summarise_data(realm_language)
+
+# Which regional or national event was the session delivered in the context of?
+outcome_data %>% 
+  filter(!is.na(which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of)) %>% 
+  summarise_data(which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of)
+
+# What was the format of the session?
+outcome_data %>% 
+  filter(!is.na(what_was_the_format_of_the_session)) %>% 
+  summarise_data(what_was_the_format_of_the_session)

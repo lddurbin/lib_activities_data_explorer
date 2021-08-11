@@ -53,7 +53,12 @@ base_table <- base_table_for_checker %>%
 # one row per selection per session
 age_groups <- multichoice_splitting(df, what_was_the_target_age_group_for_this_session, age_group)
 target_groups <- multichoice_splitting(df, which_of_these_groups_was_the_session_designed_to_benefit, target_group)
-realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_delivered_in, realm_language)
+
+realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_delivered_in, realm_language) %>% 
+  mutate(realm_language = case_when(
+    !realm_language %in% unlist(c("Te reo Māori", "Sāmoan", "Tongan")) ~ "Other",
+    !is.na(realm_language) ~ realm_language
+  ))
 
 source("outcomes.R")
 
