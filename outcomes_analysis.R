@@ -94,3 +94,14 @@ outcome_data %>%
 outcome_data %>% 
   filter(!is.na(what_was_the_format_of_the_session)) %>% 
   summarise_data(what_was_the_format_of_the_session)
+
+# remove(list = ls())
+# 
+# rmarkdown::render("outcomes_analysis.Rmd", params = list(
+#   year = 2021,
+#   month = "July",
+#   outcome = "Environment",
+#   outcome_owner = "Kirstin Kane",
+#   outcome_url = "https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx"
+# ),
+# envir = new.env())
