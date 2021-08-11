@@ -1,8 +1,5 @@
 source("data_prep.R")
 
-joined_data <- plyr::join_all(list(base_table, outcomes, age_groups, delivery_agents, realm_languages, target_groups), "id") %>% 
-  as_tibble()
-
 # How many sessions were entered into the form?
 joined_data %>% 
   distinct(id, .keep_all = TRUE) %>% 
@@ -23,7 +20,7 @@ joined_data %>%
 
 # Filter down to an outcome area
 outcome_data <- joined_data %>% 
-  filter(outcome == "Literacy")
+  filter(outcome == "Kia ora Tāmaki Makaurau")
 
 # Stats for sessions that delivered against a given outcome area
 outcome_data %>% 

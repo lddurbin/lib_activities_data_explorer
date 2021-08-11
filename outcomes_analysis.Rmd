@@ -17,6 +17,7 @@ params:
 ```{r setup, include=FALSE}
 library(knitr)
 library(rmdformats)
+library(tidyverse)
 
 ## Global options
 options(max.print="75")
@@ -55,14 +56,18 @@ outcome_data <- joined_data %>%
 this_outcome <- outcome_data %>% 
   distinct(id, outcome, .keep_all = TRUE) %>% 
   summarise_data(outcome)
+
+# joined_data %>% 
+#   filter(month(as_date(delivery_datetime), label = TRUE, abbr = FALSE) == params$month & year(as_date(delivery_datetime)) == params$year & outcome == params$outcome) %>% select(id, outcome)
 ```
 
 In `r params$month` `r params$year`, **`r prettyNum(monthly_submissions, big.mark = ",")`** in-scope programmes, events, and Book a Librarian sessions were delivered across Tāmaki Makaurau. You can browse through the complete dataset by downloading the [Data Explorer](`r params$outcome_url`).
 
 Of these `r prettyNum(monthly_submissions, big.mark = ",")` activities, a total of **`r prettyNum(outcome_submissions, big.mark = ",")`** were reported as having delivered against one of the six outcome areas. In other words, **`r round((outcome_submissions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against at least one of the six outcomes.
 
-Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r prettyNum(this_outcome$sessions, big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against the Literacy outcome.
+Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions)`** were said to have delivered against the [`r params$outcome` outcome](https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against the `r params$outcome` outcome.
 
 Looking specifically at the activities in `r params$month` `r params$year` that were said to have delivered against the `r params$outcome` outcome, **`r prettyNum(this_outcome$participants_adult, big.mark = ",")` adults** and **`r prettyNum(this_outcome$participants_children, big.mark = ",")` children** attended these sessions.
 
 In `r params$month` `r params$year`, **`r prettyNum(this_outcome$duration, big.mark = ",")` hours** were devoted to activities that were said to have delivered against the `r params$outcome` outcome.
+
