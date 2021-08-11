@@ -63,3 +63,7 @@ realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_de
 source("outcomes.R")
 
 source("delivery_agents.R")
+
+# Join all the tables into a single tibble
+joined_data <- plyr::join_all(list(base_table, outcomes, age_groups, delivery_agents, realm_languages, target_groups), "id") %>% 
+  as_tibble()
