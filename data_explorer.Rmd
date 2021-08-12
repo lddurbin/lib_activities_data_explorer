@@ -156,7 +156,7 @@ data_explorer_data <-
       "Literacy",
       "Māori",
       "Environment",
-      "Legacy",
+      "Heritage",
       "Talanoa",
       "Tātou"
     ),
@@ -178,7 +178,7 @@ data_explorer_data <-
     "Literacy",
     "Māori",
     "Environment",
-    "Legacy",
+    "Heritage",
     "Talanoa",
     "Tātou",
     everything()
@@ -431,8 +431,8 @@ bscols(
           list(fontWeight = 600, color = color)
         }
       ),
-      "Legacy" = colDef(
-        header = with_tooltip("Legacy", "We preserve our past"),
+      "Heritage" = colDef(
+        header = with_tooltip("Heritage", "We preserve our past"),
         style = function(value) {
           color <-
             if (value == "\u2718") {
@@ -524,7 +524,7 @@ bscols(
           "Literacy",
           "Māori",
           "Environment",
-          "Legacy",
+          "Heritage",
           "Talanoa",
           "Tātou"
         )
