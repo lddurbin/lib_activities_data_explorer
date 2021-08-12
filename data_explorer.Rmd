@@ -1,7 +1,7 @@
 ---
-title: "Programmes and Events Data Explorer"
-author: "Lee Durbin"
-date: "27/05/2021"
+title: "Libraries Programmes and Events Data Explorer"
+author: 
+date: 
 output:
   html_document
 theme: lumen
@@ -31,9 +31,7 @@ source("data_prep.R")
 
 ```
 
-## Data Explorer
-
-Here you can view data submitted via the Programmes and Events form since **July 1, 2021**.
+Here you can view data submitted via the [Programmes and Events form](https://ncv.microsoft.com/k1Wjdjp355) for in-scope activities that were delivered from **July 1, 2021**.
 
 The data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**.
 
