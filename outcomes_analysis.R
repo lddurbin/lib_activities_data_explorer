@@ -5,7 +5,8 @@ render_analysis <- function(outcome_data, month, year) {
     month = month,
     outcome = outcome_data[1],
     outcome_owner = outcome_data[2],
-    outcome_url = outcome_data[3]
+    outcome_url = outcome_data[3],
+    outcome_filename = outcome_data[4]
   ),
   envir = new.env())
 }
@@ -17,4 +18,6 @@ belonging <- c("Tātou / Belonging", " and Megan Grimshaw-Jones", "", "belonging
 heritage <- c("Heritage", ", Stacey Smith, and  Jacqueline Snee", "", "heritage")
 environment <- c("Environment", "", "", "environment")
 
-walk(list(kia_ora, literacy, talanoa, belonging, heritage, environment), render_analysis, month = "July", year = 2021)
+all_outcomes <- list(kia_ora, literacy, talanoa, belonging, heritage, environment)
+
+purrr::walk(all_outcomes, render_analysis, month = "July", year = 2021)

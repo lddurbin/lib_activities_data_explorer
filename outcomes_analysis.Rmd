@@ -11,6 +11,7 @@ params:
   outcome: "Literacy"
   outcome_owner: "Kirstin Kane"
   outcome_url: https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx
+  outcome_filename: "literacy"
 ---
 
 
@@ -18,6 +19,7 @@ params:
 library(knitr)
 library(rmdformats)
 library(tidyverse)
+library(scales)
 
 ## Global options
 options(max.print="75")
@@ -64,7 +66,50 @@ In `r params$month` `r params$year`, **`r prettyNum(monthly_submissions, big.mar
 
 Of these `r prettyNum(monthly_submissions, big.mark = ",")` activities, a total of **`r prettyNum(outcome_submissions, big.mark = ",")`** were reported as having delivered against one of the six outcome areas. In other words, **`r round((outcome_submissions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against at least one of the six outcomes.
 
+```{r overall_pie}
+overall_pie <- tibble(
+  group = c("With", "Without"),
+  value = c(outcome_submissions, (monthly_submissions-outcome_submissions))
+)
+
+overall_pie <- overall_pie %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = value / sum(overall_pie$value) *100) %>%
+  mutate(ypos = cumsum(prop)- 0.5*prop )
+
+ggplot(overall_pie, aes(x="", y=prop, fill=group)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.position="none") +
+  geom_text(aes(y = ypos, label = paste0(group, ":\n ", prettyNum(value, big.mark = ","))), color = "white", size=4) +
+  scale_fill_brewer(palette="Set1") +
+  ggtitle("How many sessions were delivered with outcomes, and how many\nwere delivered without outcomes?")
+```
+
 Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against the `r params$outcome` outcome.
+
+```{r outcome_pie}
+outcome_pie <- tibble(
+  group = c(params$outcome, paste0("Not ", params$outcome)),
+  value = c(this_outcome$sessions, (monthly_submissions-this_outcome$sessions))
+)
+
+outcome_pie <- outcome_pie %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = value / sum(outcome_pie$value) *100) %>%
+  mutate(ypos = cumsum(prop)- 0.5*prop )
+
+ggplot(outcome_pie, aes(x="", y=prop, fill=group)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.position="none") +
+  geom_text(aes(y = ypos, label = paste0(group, ":\n ", prettyNum(value, big.mark = ","))), color = "white", size=4) +
+  scale_fill_brewer(palette="Set1") +
+  ggtitle("How many sessions were delivered against this outcome,\nand how many were not?")
+```
+
 
 Looking specifically at the activities in `r params$month` `r params$year` that were said to have delivered against the `r params$outcome` outcome, **`r prettyNum(this_outcome$participants_adult, big.mark = ",")` adults** and **`r prettyNum(this_outcome$participants_children, big.mark = ",")` children** attended these sessions.
 
@@ -240,7 +285,7 @@ The following table shows, for each regional Unit, the number sessions said to d
 
 ## Intended Audiences
 
-Some programmes and events were designed to benefit specific age groups. Of the `r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")` sessions that were said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(age_group)) %>% n_distinct("id") %>% prettyNum(big.mark = ",")`** were designed to benefit a specific age group.
+Some programmes and events were designed to benefit specific age groups. Of the `r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")` sessions that were said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(age_group)) %>% distinct(id) %>% nrow() %>% prettyNum(big.mark = ",")`** were designed to benefit a specific age group.
 
 The following table shows, for each age group, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
 
@@ -257,7 +302,7 @@ age_groups <- outcome_data %>%
   )
 ```
 
-Some Community Libraries and Community Hubs reach out to particular groups in the community, such as new migrants, people on low incomes, people with no (or limited) qualifcations etc. Of the `r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")` sessions that were said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(target_group)) %>% n_distinct("id") %>% prettyNum(big.mark = ",")`** were designed to benefit a group of interest.
+Some Community Libraries and Community Hubs reach out to particular groups in the community, such as new migrants, people on low incomes, people with no (or limited) qualifcations etc. Of the `r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")` sessions that were said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(target_group)) %>% distinct(id) %>% nrow() %>% prettyNum(big.mark = ",")`** were designed to benefit a group of interest.
 
 The following table shows, for each group of interest, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
 
@@ -276,7 +321,7 @@ target_groups <- outcome_data %>%
 
 ## Languages
 
-In addition to English, we deliver programmes and events in a variety of other languages. In `r paste0(params$month, " ", params$year)`, a substantial part of **`r outcome_data %>% filter(!is.na(realm_language)) %>% nrow() %>% prettyNum(big.mark = ",")`** `r params$outcome` sessions were delivered in languages other than English.
+In addition to English, we deliver programmes and events in a variety of other languages. In `r paste0(params$month, " ", params$year)`, a substantial part of **`r outcome_data %>% filter(!is.na(realm_language)) %>% distinct(id) %>% nrow() %>% prettyNum(big.mark = ",")`** `r params$outcome` sessions were delivered in languages other than English.
 
 The following table shows, for each language other than English, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
 
@@ -295,7 +340,7 @@ languages <- outcome_data %>%
 
 ## Regional Theme
 
-Some programmes and events are delivered in the context of a regional theme, which is occasionally supported by working groups and toolkits. In `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of)) %>% nrow() %>% prettyNum(big.mark = ",")`** `r params$outcome` sessions were delivered in the context of one of the following regional themes:
+Some programmes and events are delivered in the context of a regional theme, which is occasionally supported by working groups and toolkits. In `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of)) %>% distinct(id) %>% nrow() %>% prettyNum(big.mark = ",")`** `r params$outcome` sessions were delivered in the context of one of the following regional themes:
 
 * ANZAC Day
 * Diwali
@@ -323,3 +368,21 @@ regional_themes <- outcome_data %>%
   )
 ```
 
+## Appendix
+
+```{r other_outcomes}
+other_outcomes <- setdiff(c("Kia ora Tāmaki Makaurau", "Literacy", "Talanoa", "Tātou / Belonging", "Heritage", "Environment"), c(params$outcome)) %>% 
+  str_replace("Tātou / Belonging", "Belonging") %>% 
+  sort()
+
+other_reports <- setdiff(str_split(Sys.getenv("OUTCOMES"), " ") %>% unlist(), params$outcome_filename) %>% sort()
+```
+
+
+To view similar information on sessions held in `r paste0(params$month, " ", params$year)` that were said to deliver against the other outcome areas, you can navigate to the relevant reports using the links below:
+
+* [`r other_outcomes[1]`](`r paste0(here::here("Reports/"), other_reports[1], ".html")`)
+* [`r other_outcomes[2]`](`r paste0(here::here("Reports/"), other_reports[2], ".html")`)
+* [`r other_outcomes[3]`](`r paste0(here::here("Reports/"), other_reports[3], ".html")`)
+* [`r other_outcomes[4]`](`r paste0(here::here("Reports/"), other_reports[4], ".html")`)
+* [`r other_outcomes[5]`](`r paste0(here::here("Reports/"), other_reports[5], ".html")`)
