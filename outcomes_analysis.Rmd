@@ -1,7 +1,7 @@
 ---
 title: "`r paste0('Libraries Programmes and Events: ', params$outcome, ' Outcome Analysis (', params$month, ' ', params$year, ')')`"
 author: "`r paste0('Lee Durbin', params$outcome_owner)`"
-date: "`r Sys.Date()`"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
 output:
   rmdformats::readthedown:
     highlight: kate
@@ -70,6 +70,34 @@ Looking specifically at the activities in `r params$month` `r params$year` that 
 
 In `r params$month` `r params$year`, **`r prettyNum(this_outcome$duration, big.mark = ",")` hours** were devoted to activities that were said to have delivered against the `r params$outcome` outcome.
 
+We group each of our sessions into one of the following broad categories:
+
+* Book a Librarian
+* Class or workshop
+* Community event
+* Club
+* Live performance
+* Pre-school activity
+* Promotion or roadshow
+* Talk
+* Other (i.e. none of the above)
+
+The following table shows, for each of these categories, the number sessions said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r formats}
+# What was the format of the session?
+formats <- outcome_data %>% 
+  filter(!is.na(what_was_the_format_of_the_session)) %>% 
+  summarise_data(what_was_the_format_of_the_session)
+
+# Show this data in a table
+  DT::datatable(
+  formats,
+  colnames = c('Session Format', common_table_headings)
+  )
+```
+
+
 ## Outcome Detail
 
 ```{r outcome_stats_data}
@@ -122,7 +150,176 @@ outcomes_crossover <- outcomes %>%
 ```{r local_boards}
 # In which Local Boards were these sessions delivered, to how many people, and for how long?
 local_boards <- summarise_data(outcome_data, in_which_local_board_was_the_session_delivered)
+```
 
-local_boards
+Sessions that were said to have delivered against the `r params$outcome` outcome were held in **`r nrow(local_boards)`** Local Boards. The table below shows, for each of these Local Boards, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r local_boards_table}
+# Show this data in a table
+  DT::datatable(
+  local_boards,
+  colnames = c('Local Board', common_table_headings)
+  )
+```
+
+The following table shows more specifically where these activities were held:
+
+```{r locations}
+# Where were these sessions delivered, to how many people, and for how long?
+locations <- summarise_data(outcome_data, location)
+
+# Show this data in a table
+  DT::datatable(
+  locations,
+  colnames = c('Location', common_table_headings)
+  )
+```
+
+## Delivery Agents
+
+Programmes and events can be delivered or co-delivered by Connected Communities staff, Auckland Council staff not based in Connected Communities, and anyone not employed by Auckland Council (such as paid providers, volunteers, community groups, authors etc.). The table below shows, for each of these types of delivery agents, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r delivery_agent_type_data}
+# Which sorts of agents delivered them?
+delivery_agent_type <- outcome_data %>% 
+  select(id, outcome, CC_staff_agents:external_agents, how_many_adults_aged_18_attended_in_person_at_this_session, how_many_children_aged_under_18_attended_in_person_at_this_session, what_was_the_duration_of_the_session_to_the_nearest_half_an_hour) %>% 
+  pivot_longer(CC_staff_agents:external_agents, names_to = "agent_type") %>% 
+  filter(value == TRUE) %>% 
+  mutate(agent_type = case_when(
+    agent_type == "CC_staff_agents" ~ "Connected Communities staff",
+    agent_type == "external_agents" ~ "Anyone not employed by Auckland Council",
+    agent_type == "non_CC_staff_agents" ~ "Other Auckland Council staff"
+  )) %>% 
+  summarise_data(agent_type)
+
+# Show this data in a table
+  DT::datatable(
+  delivery_agent_type,
+  colnames = c('Delivery Agent Type', common_table_headings)
+  )
+```
+
+```{r placed_based_teams_data}
+# Which placed-based teams delivered them?
+placed_based_teams <- outcome_data %>% 
+  filter(!is.na(delivery_library_names)) %>% 
+  summarise_data(delivery_library_names)
+```
+
+
+In Connected Communities there are placed-based teams (i.e. staff based in Community Libraries and Community Hubs) and teams who serve the region (i.e. Libraries and Learning Unit, Māori Outcomes Unit, Community Impact Unit, and Heritage and Arts Unit). In `r paste0(params$month, " ", params$year)`, **`r nrow(placed_based_teams)`** placed-based teams delivered or co-delivered sessions that were said to have delivered against the `r params$outcome` outcome.
+
+The following table shows, for each placed-based team, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r placed_based_teams_table}
+# Show this data in a table
+  DT::datatable(
+  placed_based_teams,
+  colnames = c('Library or Hub Team', common_table_headings)
+  )
+```
+
+```{r regional_teams_data}
+# Which regional teams delivered them?
+regional_teams <- outcome_data %>% 
+  filter(!is.na(unit_names)) %>% 
+  summarise_data(unit_names)
+```
+
+In `r paste0(params$month, " ", params$year)`, **`r nrow(regional_teams)`** regional teams delivered or co-delivered sessions that were said to have delivered against the `r params$outcome` outcome.
+
+The following table shows, for each regional Unit, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r regional_teams_table}
+# Show this data in a table
+  DT::datatable(
+  regional_teams,
+  colnames = c('Regional Unit', common_table_headings)
+  )
+```
+
+## Intended Audiences
+
+Some programmes and events were designed to benefit specific age groups. Of the `r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")` sessions that were said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(age_group)) %>% n_distinct("id") %>% prettyNum(big.mark = ",")`** were designed to benefit a specific age group.
+
+The following table shows, for each age group, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r age_groups}
+# Which age groups were they designed to benefit?
+age_groups <- outcome_data %>% 
+  filter(!is.na(age_group)) %>% 
+  summarise_data(age_group)
+
+# Show this data in a table
+  DT::datatable(
+  age_groups,
+  colnames = c('Age Group', common_table_headings)
+  )
+```
+
+Some Community Libraries and Community Hubs reach out to particular groups in the community, such as new migrants, people on low incomes, people with no (or limited) qualifcations etc. Of the `r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")` sessions that were said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(target_group)) %>% n_distinct("id") %>% prettyNum(big.mark = ",")`** were designed to benefit a group of interest.
+
+The following table shows, for each group of interest, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r target_groups}
+# Which other groups were they designed to benefit?
+target_groups <- outcome_data %>% 
+  filter(!is.na(target_group)) %>% 
+  summarise_data(target_group)
+
+# Show this data in a table
+  DT::datatable(
+  target_groups,
+  colnames = c('Target Group', common_table_headings)
+  )
+```
+
+## Languages
+
+In addition to English, we deliver programmes and events in a variety of other languages. In `r paste0(params$month, " ", params$year)`, a substantial part of **`r outcome_data %>% filter(!is.na(realm_language)) %>% nrow() %>% prettyNum(big.mark = ",")`** `r params$outcome` sessions were delivered in languages other than English.
+
+The following table shows, for each language other than English, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r languages}
+# Which non-English languages were they delivered in?
+languages <- outcome_data %>% 
+  filter(!is.na(realm_language)) %>% 
+  summarise_data(realm_language)
+
+# Show this data in a table
+  DT::datatable(
+  languages,
+  colnames = c('Language of Delivery', common_table_headings)
+  )
+```
+
+## Regional Theme
+
+Some programmes and events are delivered in the context of a regional theme, which is occasionally supported by working groups and toolkits. In `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of)) %>% nrow() %>% prettyNum(big.mark = ",")`** `r params$outcome` sessions were delivered in the context of one of the following regional themes:
+
+* ANZAC Day
+* Diwali
+* Lunar New Year
+* Matariki
+* Pasifika Language Week
+* Pride/Big Gay Out
+* Regional Reading Programme
+* School holidays
+* Te wiki o te reo Māori
+* Waitangi Day
+
+The following table shows, for each lregional theme, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r regional_themes}
+# Which regional or national event was the session delivered in the context of?
+regional_themes <- outcome_data %>% 
+  filter(!is.na(which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of)) %>% 
+  summarise_data(which_of_these_regional_or_national_events_was_the_session_designed_or_delivered_in_the_context_of)
+
+# Show this data in a table
+  DT::datatable(
+  regional_themes,
+  colnames = c('Regional Theme', common_table_headings)
+  )
 ```
 
