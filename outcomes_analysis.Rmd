@@ -62,7 +62,7 @@ this_outcome <- outcome_data %>%
   summarise_data(outcome)
 ```
 
-In `r params$month` `r params$year`, **`r prettyNum(monthly_submissions, big.mark = ",")`** in-scope programmes, events, and Book a Librarian sessions were delivered across Tāmaki Makaurau. You can browse through the complete dataset by downloading the [Data Explorer](`r params$outcome_url`).
+In `r params$month` `r params$year`, **`r prettyNum(monthly_submissions, big.mark = ",")`** in-scope programmes, events, and Book a Librarian sessions were delivered across Tāmaki Makaurau. You can browse through the complete dataset by downloading the [Data Explorer]().
 
 Of these `r prettyNum(monthly_submissions, big.mark = ",")` activities, a total of **`r prettyNum(outcome_submissions, big.mark = ",")`** were reported as having delivered against one of the six outcome areas. In other words, **`r round((outcome_submissions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against at least one of the six outcomes.
 
@@ -87,7 +87,7 @@ ggplot(overall_pie, aes(x="", y=prop, fill=group)) +
   ggtitle("How many sessions were delivered with outcomes, and how many\nwere delivered without outcomes?")
 ```
 
-Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against the `r params$outcome` outcome.
+Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](`r params$outcome_url`). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against the `r params$outcome` outcome.
 
 ```{r outcome_pie}
 outcome_pie <- tibble(
