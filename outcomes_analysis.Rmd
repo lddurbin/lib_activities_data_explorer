@@ -1,6 +1,6 @@
 ---
 title: "`r paste0('Libraries Programmes and Events: ', params$outcome, ' Outcome Analysis (', params$month, ' ', params$year, ')')`"
-author: "`r paste0('Lee Durbin and ', params$outcome_owner)`"
+author: "`r paste0('Lee Durbin', params$outcome_owner)`"
 date: "`r Sys.Date()`"
 output:
   rmdformats::readthedown:
@@ -29,13 +29,15 @@ opts_chunk$set(echo=FALSE,
                message=FALSE,
                warning=FALSE)
 opts_knit$set(width=75)
+
+common_table_headings <- c('Sessions', 'Participants (18+)', 'Participants (under 18)', 'Hours of Delivery')
+
+source("data_prep.R")
 ```
 
 ## Overview
 
 ```{r overview}
-source("data_prep.R")
-
 # How many sessions were entered into the form?
 monthly_submissions <- joined_data %>% 
   filter(month(as_date(delivery_datetime), label = TRUE, abbr = FALSE) == params$month & year(as_date(delivery_datetime)) == params$year) %>% 
@@ -56,16 +58,71 @@ outcome_data <- joined_data %>%
 this_outcome <- outcome_data %>% 
   distinct(id, outcome, .keep_all = TRUE) %>% 
   summarise_data(outcome)
-
 ```
 
 In `r params$month` `r params$year`, **`r prettyNum(monthly_submissions, big.mark = ",")`** in-scope programmes, events, and Book a Librarian sessions were delivered across Tāmaki Makaurau. You can browse through the complete dataset by downloading the [Data Explorer](`r params$outcome_url`).
 
 Of these `r prettyNum(monthly_submissions, big.mark = ",")` activities, a total of **`r prettyNum(outcome_submissions, big.mark = ",")`** were reported as having delivered against one of the six outcome areas. In other words, **`r round((outcome_submissions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against at least one of the six outcomes.
 
-Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions)`** were said to have delivered against the [`r params$outcome` outcome](https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against the `r params$outcome` outcome.
+Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against the `r params$outcome` outcome.
 
 Looking specifically at the activities in `r params$month` `r params$year` that were said to have delivered against the `r params$outcome` outcome, **`r prettyNum(this_outcome$participants_adult, big.mark = ",")` adults** and **`r prettyNum(this_outcome$participants_children, big.mark = ",")` children** attended these sessions.
 
 In `r params$month` `r params$year`, **`r prettyNum(this_outcome$duration, big.mark = ",")` hours** were devoted to activities that were said to have delivered against the `r params$outcome` outcome.
+
+## Outcome Detail
+
+```{r outcome_stats_data}
+# Stats for sessions that delivered against a given outcome
+outcome_stats <- outcome_data %>%
+  distinct(id, outcome, outcome_attribute, .keep_all = TRUE) %>% 
+  group_by(outcome_attribute) %>%
+  summarise(
+    sessions = n_distinct(id),
+    participants_adult = sum(how_many_adults_aged_18_attended_in_person_at_this_session, na.rm = TRUE),
+    participants_children = sum(how_many_children_aged_under_18_attended_in_person_at_this_session, na.rm = TRUE),
+    duration = sum(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour, na.rm = TRUE)/60
+  )
+
+show_outcome_stats_table <- nrow(outcome_stats) > 1
+```
+
+`r if(show_outcome_stats_table) {"This outcome area has several outcomes associated with it. The table below shows how many sessions were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions."}`
+
+```{r outcome_stats_table}
+# Show outcome stats where there are multiple outcomes per outcome area
+if(nrow(outcome_stats) > 1) {
+  DT::datatable(
+  outcome_stats,
+  colnames = c('Outcome', common_table_headings)
+  )
+}
+```
+
+A session can deliver against more than one outcome. When sessions deliver against `r params$outcome`, the table below shows the number of times such sessions deliver against any of the other outcomes, as well as the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the number of hours spent delivering these sessions:
+
+```{r outcome_crossover}
+# Stats for sessions that delivered against this outcome area that also delivered against other outcome areas
+outcomes_crossover <- outcomes %>% 
+  filter(outcome != params$outcome) %>% 
+  right_join(outcome_data %>% select(-outcome), "id") %>% 
+  filter(!is.na(outcome)) %>% 
+  distinct(id, outcome, .keep_all = TRUE) %>% 
+  summarise_data(outcome)
+
+# Show this data in a table
+  DT::datatable(
+  outcomes_crossover,
+  colnames = c('Outcome', common_table_headings)
+  )
+```
+
+## Delivery Location
+
+```{r local_boards}
+# In which Local Boards were these sessions delivered, to how many people, and for how long?
+local_boards <- summarise_data(outcome_data, in_which_local_board_was_the_session_delivered)
+
+local_boards
+```
 
