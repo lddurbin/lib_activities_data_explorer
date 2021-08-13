@@ -62,7 +62,7 @@ this_outcome <- outcome_data %>%
   summarise_data(outcome)
 ```
 
-In `r params$month` `r params$year`, **`r prettyNum(monthly_submissions, big.mark = ",")`** in-scope programmes, events, and Book a Librarian sessions were delivered across Tāmaki Makaurau. You can browse through the complete dataset by downloading the [Data Explorer]().
+In `r params$month` `r params$year`, **`r prettyNum(monthly_submissions, big.mark = ",")`** in-scope programmes, events, and Book a Librarian sessions were delivered across Tāmaki Makaurau. You can browse through the complete dataset by downloading the [Data Explorer](https://aklcouncil-my.sharepoint.com/:u:/g/personal/durbinl_aklc_govt_nz/ES56_6mDLOZIqrzoyLDpwU0B7R5rNPIhN2MYSSzAr_CYTA?download=1).
 
 Of these `r prettyNum(monthly_submissions, big.mark = ",")` activities, a total of **`r prettyNum(outcome_submissions, big.mark = ",")`** were reported as having delivered against one of the six outcome areas. In other words, **`r round((outcome_submissions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against at least one of the six outcomes.
 
