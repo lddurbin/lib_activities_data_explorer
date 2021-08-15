@@ -206,6 +206,7 @@ bscols(
   list(
     filter_select("internal_delivery_teams", "Connected Communities Delivery Team", data_explorer, ~ internal_delivery_teams),
     filter_select("location", "Delivery Location", data_explorer, ~ location),
+    filter_select("what_was_the_format_of_the_session", "Session Format", data_explorer, ~ what_was_the_format_of_the_session),
     filter_select("name", "Data Provider", data_explorer, ~ name),
     filter_select("delivery_datetime", "Session Date", data_explorer, ~ delivery_monthYear)
   ),
