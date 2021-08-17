@@ -56,7 +56,9 @@ target_groups <- multichoice_splitting(df, which_of_these_groups_was_the_session
 
 realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_delivered_in, realm_language) %>% 
   mutate(realm_language = case_when(
-    !realm_language %in% unlist(c("Te reo Māori", "Sāmoan", "Tongan")) ~ "Other",
+    str_detect(str_squish(str_to_lower(realm_language)), "chinese") ~ "Mandarin Chinese",
+    str_detect(str_squish(str_to_lower(realm_language)), "mandarin") ~ "Mandarin Chinese",
+    !realm_language %in% unlist(c("Te reo Māori", "Sāmoan", "Tongan", "Mandarin Chinese", "New Zealand Sign Language")) ~ "Other",
     !is.na(realm_language) ~ realm_language
   ))
 
