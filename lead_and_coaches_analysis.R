@@ -135,3 +135,44 @@ outcome_summary %>%
   coord_flip()
 
 
+# Stats by languages (this Local Board) ------------------------------------------------------
+
+language_submissions <- local_board_highlighted %>%
+  count(language = realm_language, name = "sessions", sort = TRUE) 
+
+language_summary <- group_and_sum(local_board_highlighted, language, realm_language) %>% 
+  left_join(language_submissions, by = "language") %>% 
+  pivot_longer(cols = 2:5, names_to = "metric") %>% 
+  mutate(language = case_when(
+    is.na(language) ~ "None",
+    !is.na(language) ~ language
+  )) %>% 
+  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants"))) %>% 
+  filter(language != "None")
+
+language_summary %>% 
+  ggplot(mapping = aes(x = tidytext::reorder_within(language, value, metric), y = value)) +
+  geom_col(fill = "blue") +
+  tidytext::scale_x_reordered() +
+  facet_wrap("metric", scales = "free") +
+  geom_text(aes(label = prettyNum(value, big.mark = ",")), hjust = 1.2, colour = "white") +
+  theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
+  coord_flip()
+
+
+# Sessions by language (all Local Boards) -------------------------------------
+
+all_language_submissions <- local_board_overall %>%
+  count(local_board = in_which_local_board_was_the_session_delivered, language = realm_language, name = "sessions", sort = TRUE) %>% 
+  filter(!is.na(language)) %>% 
+  get_local_board_data()
+
+all_language_submissions %>% 
+  ggplot(mapping = aes(x = tidytext::reorder_within(local_board, sessions, language), y = sessions, fill = highlight_local_board)) +
+  geom_col() +
+  tidytext::scale_x_reordered() +
+  facet_wrap("language", scales = "free") +
+  scale_fill_brewer(palette="Dark2") +
+  geom_text(aes(label = prettyNum(sessions, big.mark = ",")), hjust = 1.2, colour = "white") +
+  theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
+  coord_flip()
