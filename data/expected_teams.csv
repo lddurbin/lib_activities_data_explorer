@@ -1,56 +1,56 @@
-delivery_team
-Epsom Library
-Mt Albert Library
-Pt Chevalier Library
-Great Barrier Library
-Devonport Library
-Takapuna Library
-Franklin Community Hub
-Henderson Library
-Rānui Library
-Te Atatū Peninsula Community Hub
-Te Manawa Community Hub
-East Coast Bays Library
-Ōrewa Library
-Whangaparāoa Library
-Botany Library
-Highland Park Library
-Howick Library
-Pakuranga Library
-Birkenhead Library
-Glenfield Library
-Northcote Library
-Māngere Bridge Library
-Māngere East Library
-Ōtāhuhu Library
-Māngere Town Centre Community Hub
-Manurewa Library
-Te Matariki Clendon Library
-Glen Innes Library
-Panmure Library
-Onehunga & Oranga Community Hub
-Remuera Library
-St Heliers Library
-Manukau Library
-Ōtara Library
-Papatoetoe Library
-Tupu Youth Library
-Papakura Library
-Takaanini Community Hub
-Mt Roskill Library
-Helensville Library
-Kumeū Library
-Mahurangi East Library
-Warkworth Library
-Wellsford Library
-Albany Village Library
-Waiheke Library
-Glen Eden Library
-Titirangi Library
-Grey Lynn Library
-Leys Institute Little Library
-Parnell Library
-Central City Community Hub
-Avondale Library
-Blockhouse Bay Library
-New Lynn Community Hub
+delivery_team,local_board
+Epsom Library,Albert-Eden
+Mt Albert Library,Albert-Eden
+Pt Chevalier Library,Albert-Eden
+Great Barrier Library,Aotea
+Devonport Library,Devonport-Takapuna
+Takapuna Library,Devonport-Takapuna
+Franklin Community Hub,Franklin
+Henderson Library,Henderson-Massey
+Rānui Library,Henderson-Massey
+Te Atatū Peninsula Community Hub,Henderson-Massey
+Te Manawa Community Hub,Henderson-Massey
+East Coast Bays Library,Hibiscus and Bays
+Ōrewa Library,Hibiscus and Bays
+Whangaparāoa Library,Hibiscus and Bays
+Botany Library,Howick
+Highland Park Library,Howick
+Howick Library,Howick
+Pakuranga Library,Howick
+Birkenhead Library,Kaipātiki
+Glenfield Library,Kaipātiki
+Northcote Library,Kaipātiki
+Māngere Bridge Library,Māngere-Ōtāhuhu
+Māngere East Library,Māngere-Ōtāhuhu
+Ōtāhuhu Library,Māngere-Ōtāhuhu
+Māngere Town Centre Community Hub,Māngere-Ōtāhuhu
+Manurewa Library,Manurewa
+Te Matariki Clendon Library,Manurewa
+Glen Innes Library,Maungakiekie-Tāmaki
+Panmure Library,Maungakiekie-Tāmaki
+Onehunga & Oranga Community Hub,Maungakiekie-Tāmaki
+Remuera Library,Ōrākei
+St Heliers Library,Ōrākei
+Manukau Library,Ōtara-Papatoetoe
+Ōtara Library,Ōtara-Papatoetoe
+Papatoetoe Library,Ōtara-Papatoetoe
+Tupu Youth Library,Ōtara-Papatoetoe
+Papakura Library,Papakura
+Takaanini Community Hub,Papakura
+Mt Roskill Library,Puketapapa
+Helensville Library,Rodney
+Kumeū Library,Rodney
+Mahurangi East Library,Rodney
+Warkworth Library,Rodney
+Wellsford Library,Rodney
+Albany Village Library,Upper Harbour
+Waiheke Library,Waiheke
+Glen Eden Library,Waitākere Ranges
+Titirangi Library,Waitākere Ranges
+Grey Lynn Library,Waitematā
+Leys Institute Little Library,Waitematā
+Parnell Library,Waitematā
+Central City Community Hub,Waitematā
+Avondale Library,Whau
+Blockhouse Bay Library,Whau
+New Lynn Community Hub,Whau

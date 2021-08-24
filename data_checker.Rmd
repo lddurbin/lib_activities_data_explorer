@@ -90,7 +90,7 @@ latest_entry_data <- checker_data %>%
   summarise(latest_entry = max(submission_date), .groups = "drop") %>% 
   mutate(latest_entry_formatted = stamp("19 July, 2021", order = "dmy")(latest_entry))
 
-expected_teams <- read_csv("data/expected_teams.csv", col_types = "c")
+expected_teams <- read_csv("data/expected_teams.csv", col_types = "cc")
 
 data_checker <- left_join(change_in_entries, latest_entry_data, by = c("delivery_agent_or_location")) %>% 
   select(delivery_agent_or_location, latest_entry_formatted, everything())
