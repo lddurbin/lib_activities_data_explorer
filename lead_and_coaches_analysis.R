@@ -20,8 +20,8 @@ get_local_board_data <- function(df) {
   df %>% 
     left_join(local_board_data, by = "local_board") %>% 
     mutate(highlight_local_board = case_when(
-      local_board_cluster == 2 ~ TRUE,
-      local_board_cluster != 2 ~ FALSE
+      local_board_cluster %in% c(1,6,8) ~ TRUE,
+      !local_board_cluster %in% c(1,6,8) ~ FALSE
     ))
 }
 
@@ -30,8 +30,8 @@ get_teams_data <- function(df) {
     left_join(delivery_team_data, by = "delivery_team") %>% 
     left_join(local_board_data, by = "local_board") %>% 
     mutate(highlight_local_board = case_when(
-      local_board_cluster == 2 ~ TRUE,
-      local_board_cluster != 2 ~ FALSE
+      local_board_cluster %in% c(1,6,8) ~ TRUE,
+      !local_board_cluster %in% c(1,6,8) ~ FALSE
     ))
 }
 
@@ -64,6 +64,11 @@ local_board_teams <- local_board_overall %>%
   get_teams_data() %>% 
   filter(highlight_local_board == TRUE)
 
+local_board_combo <- anti_join(local_board_highlighted, local_board_teams, by = "id") %>%
+  mutate(in_which_local_board_was_the_session_delivered = local_board) %>% 
+  rename(delivery_team = delivery_library_names) %>% 
+  bind_rows(local_board_teams)
+
 
 # Stats by Local Board ----------------------------------------------------
 
@@ -78,6 +83,7 @@ local_board_summary <- group_and_sum(local_board_overall %>% distinct(id, .keep_
   mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
 
 local_board_summary %>% 
+  # filter(!metric %in% c("Sessions", "Total Hours")) %>% 
   ggplot(mapping = aes(x = tidytext::reorder_within(local_board, value, metric), y = value, fill = highlight_local_board)) +
   geom_col() +
   tidytext::scale_x_reordered() +
@@ -134,33 +140,64 @@ location_summary %>%
   coord_flip()
 
 
-# Stats by delivery team AND location -------------------------------------
+# Comet plot for delivery team vs location -------------------------------------------------
 
-delivery_team_by_location <- local_board_overall %>% 
-  select(id, local_board = in_which_local_board_was_the_session_delivered, location, delivery_team = delivery_library_names) %>% 
-  distinct(delivery_team, id, .keep_all = TRUE) %>% 
-  left_join(local_board_data, by = "local_board") %>% 
-  select(everything(), local_board_cluster_location = local_board_cluster, -c(local_board_region, lead_and_coach)) %>% 
-  left_join(delivery_team_data, by = "delivery_team", suffix = c("_location", "_team")) %>% 
-  left_join(local_board_data, by = c("local_board_team" = "local_board")) %>% 
-  select(everything(), local_board_cluster_team = local_board_cluster, -c(local_board_region, lead_and_coach)) %>% 
-  mutate(location = as.character(location), location = case_when(
-    location == "Other" ~ "Offsite",
-    !is.na(location) ~ "Onsite"
-  )) %>% 
-  filter(!is.na(delivery_team)) %>% 
-  count(delivery_team, local_board_team, location, name = "sessions")
-
-delivery_team_by_location %>% 
-  ggplot(mapping = aes(x = tidytext::reorder_within(delivery_team, sessions, local_board_team), y = sessions, fill = location)) +
-  geom_bar(stat="identity", width=.7, position = "dodge") +
-  tidytext::scale_x_reordered() +
-  facet_wrap("local_board_team", scales = "free") +
-  scale_fill_brewer(palette="Dark2") +
-  geom_text(aes(label = prettyNum(sessions, big.mark = ",")), hjust = 1.2, colour = "white", position = position_dodge(width = 0.6)) +
-  # geom_text(aes(label = prettyNum(sessions, big.mark = ",")), hjust = 1.2, colour = "white") +
-  theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
-  coord_flip()
+# library(extrafont)
+# library(hablar)
+# library(ggforce)
+# library(magick)
+# library(ggtext)
+# 
+# df_comet <- location_summary %>% 
+#   rename(value_location = value) %>% 
+#   left_join(delivery_team_summary, by = c("location" = "delivery_team", "metric")) %>% 
+#   rename(value_team = value) %>% 
+#   filter(!is.na(value_team) & !is.na(value_location)) %>% 
+#   mutate(team_location = value_team - value_location, pos_neg = case_when(
+#     team_location >= 0 ~ "More By Team", 
+#     TRUE ~ "More at Location",
+#   )) %>% 
+#   filter(as.character(metric) == "Child Participants")
+# 
+# theme_owen <- function () {
+#   theme_minimal(base_size=9) %+replace%
+#     theme(
+#       panel.grid.minor = element_blank(),
+#       plot.background = element_rect(fill = 'floralwhite', color = "floralwhite")
+#     )
+# }
+# 
+# df_comet %>% 
+#   ggplot() + 
+#   geom_link(aes(x = value_team, y = location, xend = value_location, yend = location, color = pos_neg, size = stat(index))) +
+#   scale_color_manual(values = c("#00BFFF", "#00BFFF")) +
+#   scale_size(range = c(.01, 4)) + 
+#   theme_owen() +
+#   geom_point(
+#     data = filter(df_comet, team_location > 0),
+#     aes(value_location, y = location, color = pos_neg),
+#     shape = 21,
+#     fill = "white",
+#     size = 3.5
+#   )  +
+#   geom_point(
+#     data = filter(df_comet, team_location < 0),
+#     aes(value_location, y = location, color = pos_neg),
+#     shape = 21,
+#     fill = "white",
+#     size = 3.5
+#   ) + 
+#   facet_wrap("metric", scales = "free") +
+#   theme(legend.position = 'none', 
+#         plot.title.position = 'plot',
+#         axis.text.y = element_text(size = 8),
+#         plot.title = element_text(face = 'bold', size = 15), 
+#         plot.subtitle = element_text(size = 7), 
+#         plot.margin = margin(10, 10, 20, 10)) +
+#   labs(x = "Number of children who attended sessions delivered by the team or at the site", 
+#        y = "", 
+#        title = expression(paste("Are More Children Attending Programmes and Events Delivered ", italic("By"), " Libraries/Hubs Staff, or ", italic("at"), " the Libraries/Hubs Sites?")), 
+#        subtitle = "How many children are attending programmes and events delivered by teams (tail of comet) vs at the sites where those teams are based (head of comet)?") 
 
 
 # Stats by session format -------------------------------------------------

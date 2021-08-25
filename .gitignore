@@ -6,3 +6,4 @@ data_explorer.html
 data_checker.html
 outcomes_analysis.html
 .Renviron
+plots/
