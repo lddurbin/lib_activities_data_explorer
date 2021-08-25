@@ -95,26 +95,27 @@ local_board_summary %>%
 
 # Stats by delivery team --------------------------------------------------
 
-delivery_team_submissions <- local_board_teams %>%
+delivery_team_submissions_comparison <- local_board_teams %>%
+  mutate(delivery_team = case_when(
+    delivery_team == "Central City Community Hub" ~ "Central City Library",
+    delivery_team != "Central City Community Hub" ~ delivery_team
+  )) %>% 
   mutate(on_site = case_when(
-    location == delivery_team ~ TRUE,
-    location != delivery_team ~ FALSE
+    location == delivery_team ~ "Delivered on site",
+    location != delivery_team ~ "Delivered off site"
   )) %>% 
   distinct(delivery_team, id, .keep_all = TRUE) %>% 
-  count(delivery_team, on_site, name = "sessions", sort = TRUE) 
+  count(delivery_team, on_site, name = "sessions", sort = TRUE)
 
-# delivery_team_summary <- group_and_sum(local_board_teams %>% distinct(delivery_team, id, .keep_all = TRUE), delivery_team, delivery_team) %>% 
-#   left_join(delivery_team_submissions, by = c("delivery_team", "on_site")) %>% 
-#   pivot_longer(cols = 2:5, names_to = "metric") %>% 
-#   mutate(delivery_team = case_when(
-#     is.na(delivery_team) ~ "None",
-#     !is.na(delivery_team) ~ delivery_team
-#   )) %>% 
-#   mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants"))) %>% 
-#   filter(delivery_team != "None")
-
-delivery_team_summary <- local_board_teams %>%
-  mutate(on_site = case_when(location == delivery_team ~ TRUE, location != delivery_team ~ FALSE)) %>%
+delivery_team_summary_comparison <- local_board_teams %>%
+  mutate(delivery_team = case_when(
+    delivery_team == "Central City Community Hub" ~ "Central City Library",
+    delivery_team != "Central City Community Hub" ~ delivery_team
+  )) %>% 
+  mutate(on_site = case_when(
+    location == delivery_team ~ "Delivered on site",
+    location != delivery_team ~ "Delivered off site"
+  )) %>%
   distinct(delivery_team, id, .keep_all = TRUE) %>% 
   group_by(delivery_team, on_site) %>% 
   summarise(
@@ -122,18 +123,35 @@ delivery_team_summary <- local_board_teams %>%
     adult_participants = sum(across(starts_with(c("how_many_adults", "how_many_people"))), na.rm = TRUE),
     child_participants = sum(across(starts_with(c("how_many_children", "how_many_people"))), na.rm = TRUE),
     .groups = "drop") %>% 
-  left_join(delivery_team_submissions, by = c("delivery_team", "on_site")) %>% 
+  left_join(delivery_team_submissions_comparison, by = c("delivery_team", "on_site")) %>% 
   pivot_longer(cols = 3:6, names_to = "metric") %>% 
-  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants"))) 
+  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants"))) %>% 
+  with_groups(c(delivery_team, metric), mutate, perc = round(value/sum(value)*100))
 
-delivery_team_summary %>% 
-  ggplot(mapping = aes(x = tidytext::reorder_within(delivery_team, value, metric), y = value, fill = on_site)) +
-  geom_col() +
+delivery_team_submissions_volumes <- local_board_teams %>%
+  distinct(delivery_team, id, .keep_all = TRUE) %>% 
+  count(delivery_team, name = "sessions", sort = TRUE) 
+
+delivery_team_summary_volumes <- group_and_sum(local_board_teams %>% distinct(id, .keep_all = TRUE), delivery_team, delivery_team) %>% 
+  left_join(delivery_team_submissions_volumes, by = "delivery_team") %>% 
+  pivot_longer(cols = 2:5, names_to = "metric") %>% 
+  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
+
+delivery_team_summary_volumes %>% 
+  ggplot(mapping = aes(x = tidytext::reorder_within(delivery_team, value, metric), y = value)) +
+  geom_col(fill = "blue") +
   tidytext::scale_x_reordered() +
   facet_wrap("metric", scales = "free") +
   geom_text(aes(label = prettyNum(value, big.mark = ",")), hjust = 1.2, colour = "white") +
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
+
+# What % of sessions are they delivering onsite vs offsite? what proportion of their delivery time is spent onsite vs offisite? what proportion of adults and children attend sessions they deliver onsite vs offsite?
+delivery_team_summary_comparison %>% 
+  ggplot(mapping = aes(x = metric, y = perc, fill = on_site)) +
+  geom_col() +
+  facet_wrap("delivery_team", scales = "free") +
+  theme(legend.title = element_text(size = 0), axis.title = element_blank())
 
 
 # Stats by locations -------------------------------------------------
