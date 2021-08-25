@@ -137,6 +137,7 @@ delivery_team_summary_volumes <- group_and_sum(local_board_teams %>% distinct(id
   pivot_longer(cols = 2:5, names_to = "metric") %>% 
   mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
 
+# How many sessions / hours of delivery / participants per delivery team?
 delivery_team_summary_volumes %>% 
   ggplot(mapping = aes(x = tidytext::reorder_within(delivery_team, value, metric), y = value)) +
   geom_col(fill = "blue") +
