@@ -147,12 +147,34 @@ delivery_team_summary_volumes %>%
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
 
-# What % of sessions are they delivering onsite vs offsite? what proportion of their delivery time is spent onsite vs offisite? what proportion of adults and children attend sessions they deliver onsite vs offsite?
+library("ggtext")
+
+# What % of sessions are they delivering onsite vs offsite?
 delivery_team_summary_comparison %>% 
-  ggplot(mapping = aes(x = metric, y = perc, fill = on_site)) +
+  filter(metric == "Sessions") %>% 
+  arrange(delivery_team, (on_site)) %>% 
+  with_groups(delivery_team, mutate, label_y = cumsum(perc) - 0.5 * perc) %>% 
+  ggplot(mapping = aes(x = delivery_team, y = perc, fill = reorder(on_site, desc(on_site)))) +
   geom_col() +
-  facet_wrap("delivery_team", scales = "free") +
-  theme(legend.title = element_text(size = 0), axis.title = element_blank())
+  scale_fill_manual(values = c("grey", "orange")) +
+  geom_text(aes(y = label_y, label = paste0(perc, "%")), colour = "black") +
+  labs(
+    title = "<span style='font-size:16pt';>What % of sessions delivered by each team were held <span style='color:orange';>**off site**</span style> and <span style='color:grey';>**on site**</span>?</span>"
+  ) +
+  theme(
+    text = element_text(family = "Times"),
+    plot.title.position = "plot",
+    plot.title = element_markdown(size = 11, lineheight = 1.2),
+    legend.title = element_text(size = 0),
+    axis.title = element_blank(),
+    axis.text.x=element_blank(),
+    axis.ticks.x=element_blank()
+  ) +
+  coord_flip() +
+  scale_y_discrete() +
+  scale_x_discrete(limits=rev)
+
+# NOW SHOW HOW THE RANKING CHANGES WHEN LOOKING AT % OF SESSIONS DELIVERED OFF SITE VS % OF ADULTS/CHILDREN WHO ATTENDED OFFSITE SESSIONS
 
 
 # Stats by locations -------------------------------------------------
