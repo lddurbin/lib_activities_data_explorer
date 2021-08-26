@@ -93,6 +93,29 @@ local_board_summary %>%
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
 
+
+# Stats by locations -------------------------------------------------
+
+location_submissions <- local_board_highlighted %>%
+  distinct(id, .keep_all = TRUE) %>% 
+  count(location, name = "sessions", sort = TRUE) 
+# count(location, CC_staff_agents, name = "sessions", sort = TRUE) 
+
+location_summary <- group_and_sum(local_board_highlighted %>% distinct(id, .keep_all = TRUE), location, location) %>% 
+  left_join(location_submissions, by = "location") %>% 
+  pivot_longer(cols = 2:5, names_to = "metric") %>% 
+  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
+
+location_summary %>% 
+  ggplot(mapping = aes(x = tidytext::reorder_within(location, value, metric), y = value)) +
+  geom_col(fill = "blue") +
+  tidytext::scale_x_reordered() +
+  facet_wrap("metric", scales = "free") +
+  geom_text(aes(label = prettyNum(value, big.mark = ",")), hjust = 1.2, colour = "white") +
+  theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
+  coord_flip()
+
+
 # Stats by delivery team --------------------------------------------------
 
 delivery_team_submissions_comparison <- local_board_teams %>%
@@ -147,6 +170,54 @@ delivery_team_summary_volumes %>%
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
 
+slope_chart_all <- delivery_team_summary_volumes %>%
+  filter(metric %in% c("Sessions", "Child Participants")) %>% 
+  left_join(delivery_team_data, by = "delivery_team") %>% 
+  mutate(local_board = case_when(
+    delivery_team == "Central City Library" ~ "Waitematā",
+    delivery_team != "Central City Library" ~ local_board
+  )) %>% 
+  mutate(highlight_team = case_when(
+    delivery_team %in% c("Onehunga & Oranga Community Hub", "St Heliers Library") ~ TRUE,
+    !delivery_team %in% c("Onehunga & Oranga Community Hub", "St Heliers Library") ~ FALSE,
+  )) %>% 
+  arrange(desc(value), metric, delivery_team) %>% 
+  with_groups(c(metric), mutate, rank = rank(value, ties.method = "first"))
+
+slope_chart_all %>% 
+  ggplot(aes(x = metric, y = rank, group = delivery_team)) +
+  geom_line(aes(color = highlight_team, alpha = 1), size = 2) +
+  scale_color_manual(values = c("grey", "blue")) +
+  geom_point(size = 3) +
+  geom_text(data = slope_chart_all %>% filter(metric == "Sessions"),
+            aes(label = paste0(delivery_team, " (", rev(rank), ")")) ,
+            hjust = 1.1,
+            fontface = "bold",
+            size = 3) +
+  geom_text(data = slope_chart_all %>% filter(metric == "Child Participants"),
+            aes(label = paste0(delivery_team, " (", rev(rank), ")")) ,
+            hjust = -.3,
+            fontface = "bold",
+            size = 3) +
+  theme(legend.position = "none") +
+  theme(axis.title.y     = element_blank()) +
+  theme(axis.text.y      = element_blank()) +
+  theme(panel.grid.major.y = element_blank()) +
+  theme(panel.grid.minor.y = element_blank()) +
+  theme(axis.title.x     = element_blank()) +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.text.x.top      = element_text(size=12)) +
+  theme(axis.ticks       = element_blank()) +
+  theme(axis.text.x = element_text(size=14,face="bold")) +
+  # Format title & subtitle
+  theme(plot.title       = element_text(size=14, face = "bold", hjust = 0.5)) +
+  theme(plot.subtitle    = element_text(hjust = 0.5)) +
+  labs(
+    title = "Some teams are reaching many under-18s over surprisingly few sessions",
+    subtitle = "Ranking Central-East Library & Hub teams by the number of sessions they delivered in July 2021 \nand the number of under-18s who attended them",
+  )
+
+
 library("ggtext")
 
 # What % of sessions are they delivering onsite vs offsite?
@@ -159,7 +230,7 @@ delivery_team_summary_comparison %>%
   scale_fill_manual(values = c("grey", "orange")) +
   geom_text(aes(y = label_y, label = paste0(perc, "%")), colour = "black") +
   labs(
-    title = "<span style='font-size:16pt';>What % of sessions delivered by each team were held <span style='color:orange';>**off site**</span style> and <span style='color:grey';>**on site**</span>?</span>"
+    title = "<span style='font-size:16pt';>What % of sessions delivered by each team in **July 2021** were held <span style='color:orange';>**off site**</span style> and <span style='color:grey';>**on site**</span>?</span>"
   ) +
   theme(
     text = element_text(family = "Times"),
@@ -174,29 +245,96 @@ delivery_team_summary_comparison %>%
   scale_y_discrete() +
   scale_x_discrete(limits=rev)
 
-# NOW SHOW HOW THE RANKING CHANGES WHEN LOOKING AT % OF SESSIONS DELIVERED OFF SITE VS % OF ADULTS/CHILDREN WHO ATTENDED OFFSITE SESSIONS
+# What % of their total attendees under-18 are turning up to their offsite sessions?
+delivery_team_summary_comparison %>% 
+  filter(metric == "Child Participants" & perc < 100 & perc > 0) %>% 
+  arrange(delivery_team, (on_site)) %>% 
+  with_groups(delivery_team, mutate, label_y = cumsum(perc) - 0.5 * perc) %>% 
+  ggplot(mapping = aes(x = delivery_team, y = perc, fill = reorder(on_site, desc(on_site)))) +
+  geom_col() +
+  scale_fill_manual(values = c("grey", "orange")) +
+  geom_text(aes(y = label_y, label = paste0(perc, "%")), colour = "black") +
+  labs(
+    title = "<span style='font-size:16pt';>In **July 2021**, what % of the children at each team's sessions are turning up to their <span style='color:orange';>**off site**</span style> and <span style='color:grey';>**on site**</span> sessions?</span>"
+  ) +
+  theme(
+    text = element_text(family = "Times"),
+    plot.title.position = "plot",
+    plot.title = element_markdown(size = 11, lineheight = 1.2),
+    legend.title = element_text(size = 0),
+    axis.title = element_blank(),
+    axis.text.x=element_blank(),
+    axis.ticks.x=element_blank()
+  ) +
+  coord_flip() +
+  scale_y_discrete() +
+  scale_x_discrete(limits=rev)
 
+# What % of their total attendees over 18 are turning up to their offsite sessions?
+delivery_team_summary_comparison %>% 
+  filter(metric == "Adult Participants" & perc < 100 & perc > 0) %>% 
+  arrange(delivery_team, (on_site)) %>% 
+  with_groups(delivery_team, mutate, label_y = cumsum(perc) - 0.5 * perc) %>% 
+  ggplot(mapping = aes(x = delivery_team, y = perc, fill = reorder(on_site, desc(on_site)))) +
+  geom_col() +
+  scale_fill_manual(values = c("grey", "orange")) +
+  geom_text(aes(y = label_y, label = paste0(perc, "%")), colour = "black") +
+  labs(
+    title = "<span style='font-size:16pt';>In **July 2021**, what % of the adults at each team's sessions are turning up to their <span style='color:orange';>**off site**</span style> and <span style='color:grey';>**on site**</span> sessions?</span>"
+  ) +
+  theme(
+    text = element_text(family = "Times"),
+    plot.title.position = "plot",
+    plot.title = element_markdown(size = 11, lineheight = 1.2),
+    legend.title = element_text(size = 0),
+    axis.title = element_blank(),
+    axis.text.x=element_blank(),
+    axis.ticks.x=element_blank()
+  ) +
+  coord_flip() +
+  scale_y_discrete() +
+  scale_x_discrete(limits=rev)
 
-# Stats by locations -------------------------------------------------
+slope_chart_offsite_all <- delivery_team_summary_comparison %>%
+  filter(metric %in% c("Sessions", "Adult Participants") & on_site == "Delivered off site" & perc < 100) %>% 
+  group_by(delivery_team) %>% 
+  left_join(delivery_team_data, by = "delivery_team") %>% 
+  mutate(local_board = case_when(
+    delivery_team == "Central City Library" ~ "Waitematā",
+    delivery_team != "Central City Library" ~ local_board
+  ))
 
-location_submissions <- local_board_highlighted %>%
-  distinct(id, .keep_all = TRUE) %>% 
-  count(location, name = "sessions", sort = TRUE) 
-  # count(location, CC_staff_agents, name = "sessions", sort = TRUE) 
-
-location_summary <- group_and_sum(local_board_highlighted %>% distinct(id, .keep_all = TRUE), location, location) %>% 
-  left_join(location_submissions, by = "location") %>% 
-  pivot_longer(cols = 2:5, names_to = "metric") %>% 
-  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
-
-location_summary %>% 
-  ggplot(mapping = aes(x = tidytext::reorder_within(location, value, metric), y = value)) +
-  geom_col(fill = "blue") +
-  tidytext::scale_x_reordered() +
-  facet_wrap("metric", scales = "free") +
-  geom_text(aes(label = prettyNum(value, big.mark = ",")), hjust = 1.2, colour = "white") +
-  theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
-  coord_flip()
+slope_chart_offsite_all %>% 
+  ggplot(aes(x = metric, y = perc, group = delivery_team)) +
+  geom_line(size = 2) +
+  geom_point(size = 4) +
+  geom_text(data = slope_chart_offsite_all %>% filter(metric == "Sessions"),
+            aes(label = paste0(delivery_team, ": ", perc, "%", " (n=", value, ")")) ,
+            hjust = 1.1,
+            fontface = "bold",
+            size = 3) +
+  geom_text(data = slope_chart_offsite_all %>% filter(metric == "Adult Participants"),
+            aes(label = paste0(delivery_team, ": ", perc, "%", " (n=", value, ")")) ,
+            hjust = -.1,
+            fontface = "bold",
+            size = 3) +
+  facet_wrap("local_board") +
+  theme(legend.position = "none") +
+  theme(axis.title.y     = element_blank()) +
+  theme(axis.text.y      = element_blank()) +
+  theme(panel.grid.major.y = element_blank()) +
+  theme(panel.grid.minor.y = element_blank()) +
+  theme(axis.title.x     = element_blank()) +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.text.x.top      = element_text(size=12)) +
+  theme(axis.ticks       = element_blank()) +
+  # Format title & subtitle
+  theme(plot.title       = element_text(size=14, face = "bold", hjust = 0.5)) +
+  theme(plot.subtitle    = element_text(hjust = 0.5)) +
+  labs(
+    title = "Off-site programmes and events delivered by teams in the Central-East region",
+    subtitle = "What % of sessions did they deliver off site, and what % of the adults at all of their sessions attended these off-site sessions?",
+  )
 
 
 # Comet plot for delivery team vs location -------------------------------------------------
@@ -261,21 +399,22 @@ location_summary %>%
 
 # Stats by session format -------------------------------------------------
 
-session_format_submissions <- local_board_highlighted %>%
+session_format_submissions <- local_board_teams %>%
   distinct(id, .keep_all = TRUE) %>% 
-  count(session_format = what_was_the_format_of_the_session, name = "sessions", sort = TRUE) 
+  count(delivery_team, session_format = what_was_the_format_of_the_session, name = "sessions", sort = TRUE) %>% 
+  with_groups(c(delivery_team), mutate, perc = round(sessions/sum(sessions)*100))
 
-session_format_summary <- group_and_sum(local_board_highlighted %>% distinct(id, .keep_all = TRUE), session_format, what_was_the_format_of_the_session) %>% 
-  left_join(session_format_submissions, by = "session_format") %>% 
-  pivot_longer(cols = 2:5, names_to = "metric") %>% 
-  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
+# session_format_summary <- group_and_sum(local_board_teams %>% distinct(id, .keep_all = TRUE), session_format, what_was_the_format_of_the_session) %>% 
+#   left_join(session_format_submissions, by = "session_format") %>% 
+#   pivot_longer(cols = 2:5, names_to = "metric") %>% 
+#   mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
 
-session_format_summary %>% 
-  ggplot(mapping = aes(x = tidytext::reorder_within(session_format, value, metric), y = value)) +
+session_format_submissions %>% 
+  ggplot(mapping = aes(x = tidytext::reorder_within(session_format, perc, delivery_team), y = perc)) +
   geom_col(fill = "blue") +
   tidytext::scale_x_reordered() +
-  facet_wrap("metric", scales = "free") +
-  geom_text(aes(label = prettyNum(value, big.mark = ",")), hjust = 1.2, colour = "white") +
+  facet_wrap("delivery_team", scales = "free") +
+  geom_text(aes(label = paste0(perc, "%")), hjust = 1.2, colour = "white") +
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
 
@@ -307,26 +446,31 @@ outcome_summary %>%
 
 # Stats by languages (this Local Board) ------------------------------------------------------
 
-language_submissions <- local_board_highlighted %>%
+language_submissions <- local_board_teams %>%
   distinct(id, realm_language, .keep_all = TRUE) %>% 
-  count(language = realm_language, name = "sessions", sort = TRUE) 
-
-language_summary <- group_and_sum(local_board_highlighted %>% distinct(id, realm_language, .keep_all = TRUE), language, realm_language) %>% 
-  left_join(language_submissions, by = "language") %>% 
-  pivot_longer(cols = 2:5, names_to = "metric") %>% 
+  count(language = realm_language, delivery_team, name = "sessions", sort = TRUE) %>% 
   mutate(language = case_when(
-    is.na(language) ~ "None",
+    is.na(language) ~ "English",
     !is.na(language) ~ language
   )) %>% 
-  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants"))) %>% 
-  filter(language != "None")
+  with_groups(c(delivery_team), mutate, perc = round(sessions/sum(sessions)*100))
 
-language_summary %>% 
-  ggplot(mapping = aes(x = tidytext::reorder_within(language, value, metric), y = value)) +
+# language_summary <- group_and_sum(local_board_highlighted %>% distinct(id, realm_language, .keep_all = TRUE), language, realm_language) %>% 
+#   left_join(language_submissions, by = "language") %>% 
+#   pivot_longer(cols = 2:5, names_to = "metric") %>% 
+#   mutate(language = case_when(
+#     is.na(language) ~ "None",
+#     !is.na(language) ~ language
+#   )) %>% 
+#   mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants"))) %>% 
+#   filter(language != "None")
+
+language_submissions %>% 
+  ggplot(mapping = aes(x = tidytext::reorder_within(delivery_team, perc, language), y = perc)) +
   geom_col(fill = "blue") +
   tidytext::scale_x_reordered() +
-  facet_wrap("metric", scales = "free") +
-  geom_text(aes(label = prettyNum(value, big.mark = ",")), hjust = 1.2, colour = "white") +
+  facet_wrap("language", scales = "free") +
+  geom_text(aes(label = paste0(perc, "%")), hjust = 1.2, colour = "white") +
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
 
@@ -336,16 +480,17 @@ language_summary %>%
 all_language_submissions <- local_board_overall %>%
   distinct(id, realm_language, .keep_all = TRUE) %>% 
   count(local_board = in_which_local_board_was_the_session_delivered, language = realm_language, name = "sessions", sort = TRUE) %>% 
-  filter(!is.na(language)) %>% 
-  get_local_board_data()
+  get_local_board_data() %>% 
+  with_groups(c(local_board), mutate, perc = round(sessions/sum(sessions)*100)) %>% 
+  filter(!is.na(language))
 
 all_language_submissions %>% 
-  ggplot(mapping = aes(x = tidytext::reorder_within(local_board, sessions, language), y = sessions, fill = highlight_local_board)) +
+  ggplot(mapping = aes(x = tidytext::reorder_within(local_board, perc, language), y = perc, fill = highlight_local_board)) +
   geom_col() +
   tidytext::scale_x_reordered() +
   facet_wrap("language", scales = "free") +
   scale_fill_brewer(palette="Dark2") +
-  geom_text(aes(label = prettyNum(sessions, big.mark = ",")), hjust = 1.2, colour = "white") +
+  geom_text(aes(label = paste0(perc, "%")), hjust = 1.2, colour = "white") +
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
 
