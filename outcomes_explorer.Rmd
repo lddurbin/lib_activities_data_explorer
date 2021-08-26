@@ -1,7 +1,7 @@
 ---
 title: "`r paste0('Libraries Programmes and Events: ', params$outcome, ' Outcome Analysis (', params$month, ' ', params$year, ')')`"
-author: "`r paste0('Lee Durbin', params$outcome_owner)`"
-date: "`r format(Sys.Date(), '%d %B %Y')`"
+author: "`r paste0('Compiled by Lee Durbin', params$outcome_owner)`"
+date: "`r paste0(params$month, ' ', params$year)`"
 output:
   rmdformats::readthedown:
     highlight: kate
@@ -9,7 +9,7 @@ params:
   year: 2021
   month: July
   outcome: "Literacy"
-  outcome_owner: "Kirstin Kane"
+  outcome_owner: " for Kirstin Kane"
   outcome_url: https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx
   outcome_filename: "literacy"
 ---
@@ -20,6 +20,8 @@ library(knitr)
 library(rmdformats)
 library(tidyverse)
 library(scales)
+library(waffle)
+library(hrbrthemes)
 
 ## Global options
 options(max.print="75")
@@ -66,48 +68,58 @@ In `r params$month` `r params$year`, **`r prettyNum(monthly_submissions, big.mar
 
 Of these `r prettyNum(monthly_submissions, big.mark = ",")` activities, a total of **`r prettyNum(outcome_submissions, big.mark = ",")`** were reported as having delivered against one of the six outcome areas. In other words, **`r round((outcome_submissions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against at least one of the six outcomes.
 
-```{r overall_pie}
-overall_pie <- tibble(
+```{r overall_waffle}
+overall_waffle <- tibble(
   group = c("With", "Without"),
   value = c(outcome_submissions, (monthly_submissions-outcome_submissions))
-)
-
-overall_pie <- overall_pie %>% 
+  ) %>% 
   arrange(desc(group)) %>%
-  mutate(prop = value / sum(overall_pie$value) *100) %>%
-  mutate(ypos = cumsum(prop)- 0.5*prop )
+  mutate(prop = round(value / sum(value) *100))
 
-ggplot(overall_pie, aes(x="", y=prop, fill=group)) +
-  geom_bar(stat="identity", width=1, color="white") +
-  coord_polar("y", start=0) +
-  theme_void() + 
-  theme(legend.position="none") +
-  geom_text(aes(y = ypos, label = paste0(group, ":\n ", prettyNum(value, big.mark = ","))), color = "white", size=4) +
-  scale_fill_brewer(palette="Set1") +
-  ggtitle("How many sessions were delivered with outcomes, and how many\nwere delivered without outcomes?")
+with_outcomes <- overall_waffle %>% 
+  filter(group == "With") %>% 
+  pull(prop)
+  
+overall_waffle %>% 
+  ggplot(aes(fill = group, values = prop)) +
+  waffle::geom_waffle() +
+  scale_fill_manual(
+    name = NULL,
+    values = c("blue", "grey"),
+    labels = c("Outcomes", "No outcomes")
+  ) +
+  coord_equal() +
+  theme_void() +
+  ggtitle(paste0(with_outcomes, "% of the in-scope libraries activities delivered in ", paste0(params$month, " ", params$year), "\nwere said to have delivered against at least one of the outcomes"))
+
 ```
 
-Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](`r params$outcome_url`). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were reported as having delivered against the `r params$outcome` outcome.
+Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](`r params$outcome_url`). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were said to have delivered against the `r params$outcome` outcome.
 
-```{r outcome_pie}
-outcome_pie <- tibble(
+```{r outcome_waffle}
+this_outcome_waffle <- tibble(
   group = c(params$outcome, paste0("Not ", params$outcome)),
   value = c(this_outcome$sessions, (monthly_submissions-this_outcome$sessions))
-)
-
-outcome_pie <- outcome_pie %>% 
+) %>% 
   arrange(desc(group)) %>%
-  mutate(prop = value / sum(outcome_pie$value) *100) %>%
-  mutate(ypos = cumsum(prop)- 0.5*prop )
+  mutate(prop = round(value / sum(value) *100))
 
-ggplot(outcome_pie, aes(x="", y=prop, fill=group)) +
-  geom_bar(stat="identity", width=1, color="white") +
-  coord_polar("y", start=0) +
-  theme_void() + 
-  theme(legend.position="none") +
-  geom_text(aes(y = ypos, label = paste0(group, ":\n ", prettyNum(value, big.mark = ","))), color = "white", size=4) +
-  scale_fill_brewer(palette="Set1") +
-  ggtitle("How many sessions were delivered against this outcome,\nand how many were not?")
+with_this_outcome <- this_outcome_waffle %>% 
+  filter(group == params$outcome) %>% 
+  pull(prop)
+
+this_outcome_waffle %>% 
+  ggplot(aes(fill = group, values = prop)) +
+  waffle::geom_waffle() +
+  scale_fill_manual(
+    name = NULL,
+    values = c("blue", "grey"),
+    labels = c(params$outcome, paste0("Not ", params$outcome))
+  ) +
+  coord_equal() +
+  theme_void() +
+  ggtitle(paste0(with_this_outcome, "% of the in-scope libraries activities delivered in ", paste0(params$month, " ", params$year), "\nwere said to have delivered against the ", params$outcome, " outcome"))
+
 ```
 
 

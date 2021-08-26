@@ -11,11 +11,11 @@ render_analysis <- function(outcome_data, month, year) {
   envir = new.env())
 }
 
-kia_ora <- c("Kia ora Tāmaki Makaurau", " and Judith Waaka", "https://aklcouncil.sharepoint.com/sites/who-we-are/SitePages/maori-outcomes.aspx", "kia_ora")
-literacy <- c("Literacy", " and Kirstin Kane", "https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx", "literacy")
-talanoa <- c("Talanoa", " and Elenoa Mo'a Sili-Mati", "https://aklcouncil.sharepoint.com/sites/who-we-are/SitePages/Pacific-Framework.aspx", "talanoa")
-belonging <- c("Tātou / Belonging", " and Megan Grimshaw-Jones", "", "belonging")
-heritage <- c("Heritage", ", Stacey Smith, and  Jacqueline Snee", "https://aklcouncil.sharepoint.com/sites/teams-groups/SitePages/heritage-team.aspx", "heritage")
+kia_ora <- c("Kia ora Tāmaki Makaurau", " for Judith Waaka", "https://aklcouncil.sharepoint.com/sites/who-we-are/SitePages/maori-outcomes.aspx", "kia_ora")
+literacy <- c("Literacy", " for Kirstin Kane", "https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx", "literacy")
+talanoa <- c("Talanoa", " for Elenoa Mo'a Sili-Mati", "https://aklcouncil.sharepoint.com/sites/who-we-are/SitePages/Pacific-Framework.aspx", "talanoa")
+belonging <- c("Tātou / Belonging", " for Megan Grimshaw-Jones", "", "belonging")
+heritage <- c("Heritage", ", for Stacey Smith, and  Jacqueline Snee", "https://aklcouncil.sharepoint.com/sites/teams-groups/SitePages/heritage-team.aspx", "heritage")
 environment <- c("Environment", "", "", "environment")
 
 all_outcomes <- list(kia_ora, literacy, talanoa, belonging, heritage, environment)
