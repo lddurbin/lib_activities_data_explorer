@@ -100,7 +100,7 @@ this_outcome_waffle %>%
 ```{r outcome_explorer_data}
 outcome_explorer_data <- outcome_data %>% 
   distinct(id, .keep_all = TRUE) %>% 
-  mutate(location = paste0(in_which_local_board_was_the_session_delivered, ": ", location), delivery_datetime = ymd_hms(delivery_datetime), delivery_date = stamp("Sunday, 30 November at 4.30pm", orders="AdBIMp", quiet = TRUE)(delivery_datetime),participants = (rowSums(across(starts_with("how_many_")), na.rm = TRUE))) %>% 
+  mutate(location = paste0(in_which_local_board_was_the_session_delivered, ": ", location), delivery_datetime = ymd_hms(delivery_datetime), delivery_date = stamp("30 November at 4.30pm", orders="dBIMp", quiet = TRUE)(delivery_datetime),participants = (rowSums(across(starts_with("how_many_")), na.rm = TRUE))) %>% 
   select("Session Name" = what_was_the_name_of_the_session, "Format" = what_was_the_format_of_the_session, "Where was it delivered?" = location, "When was it delivered?" = delivery_date,  "How many people participated?" = participants)
 ```
 
@@ -111,7 +111,8 @@ caption <- paste0('A table showing some information about sessions that were sai
   
 DT::datatable(
   outcome_explorer_data,
-  caption = caption
+  caption = caption,
+  rownames = FALSE
 )
 ```
 

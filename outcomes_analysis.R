@@ -15,7 +15,7 @@ kia_ora <- c("Kia ora Tāmaki Makaurau", " for Judith Waaka", "https://aklcounci
 literacy <- c("Literacy", " for Kirstin Kane", "https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx", "literacy", Sys.getenv("LITERACY_URL"))
 talanoa <- c("Talanoa", " for Elenoa Mo'a Sili-Mati", "https://aklcouncil.sharepoint.com/sites/who-we-are/SitePages/Pacific-Framework.aspx", "talanoa", Sys.getenv("TALANOA_URL"))
 belonging <- c("Tātou / Belonging", " for Megan Grimshaw-Jones", "", "belonging", Sys.getenv("BELONGING_URL"))
-heritage <- c("Heritage", ", for Stacey Smith, and  Jacqueline Snee", "https://aklcouncil.sharepoint.com/sites/teams-groups/SitePages/heritage-team.aspx", "heritage", Sys.getenv("HERITAGE_URL"))
+heritage <- c("Heritage", " for Stacey Smith, and  Jacqueline Snee", "https://aklcouncil.sharepoint.com/sites/teams-groups/SitePages/heritage-team.aspx", "heritage", Sys.getenv("HERITAGE_URL"))
 environment <- c("Environment", "", "", "environment", Sys.getenv("ENVIRONMENT_URL"))
 
 all_outcomes <- list(kia_ora, literacy, talanoa, belonging, heritage, environment)
