@@ -6,7 +6,6 @@ render_analysis <- function(outcome_data, month, year) {
     outcome = outcome_data[1],
     outcome_owner = outcome_data[2],
     outcome_url = outcome_data[3],
-    outcome_filename = outcome_data[4],
     outcome_file_location = outcome_data[5]
   ),
   envir = new.env())
