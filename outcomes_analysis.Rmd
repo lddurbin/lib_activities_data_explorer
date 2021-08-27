@@ -78,26 +78,23 @@ Of these `r prettyNum(monthly_submissions, big.mark = ",")` activities, a total 
 
 ```{r overall_waffle}
 overall_waffle <- tibble(
-  group = factor(c("With", "Without")),
+  group = factor(c("With Outcome", "Without Outcome")),
   value = c(outcome_submissions, (monthly_submissions-outcome_submissions))
   ) %>% 
-  mutate(prop = round(value / sum(value) *100))
+  mutate(prop = round(value / sum(value) *100), .keep = "unused")
 
 with_outcomes <- overall_waffle %>% 
-  filter(group == "With") %>% 
+  filter(group == "With Outcome") %>% 
   pull(prop)
-  
+
 overall_waffle %>% 
-  ggplot(aes(fill = group, values = prop)) +
-  waffle::geom_waffle() +
-  scale_fill_manual(
-    name = NULL,
-    values = c("blue", "grey"),
-    labels = c("Outcomes", "No outcomes")
-  ) +
-  coord_equal() +
-  theme_void() +
-  ggtitle(paste0(with_outcomes, "% of the in-scope libraries activities delivered in ", paste0(params$month, " ", params$year), "\nwere said to have delivered against at least one of the outcomes"))
+  deframe() %>% 
+  waffle(
+    colors = c("blue", "grey"),
+    legend_pos = "bottom",
+    title = paste0(with_outcomes, "% of the in-scope libraries activities delivered in\n", paste0(params$month, " ", params$year), " were said to have delivered against\nat least one of the outcomes"),
+    xlab = paste0("1 square = 1% of programmes and events delivered in ", params$month, " ", params$year)
+    )
 ```
 
 Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](`r params$outcome_url`). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were said to have delivered against the `r params$outcome` outcome.
@@ -107,23 +104,20 @@ this_outcome_waffle <- tibble(
   group = factor(c(params$outcome, paste0("Not ", params$outcome)), ordered = TRUE),
   value = c(this_outcome$sessions, (monthly_submissions-this_outcome$sessions))
 ) %>% 
-  mutate(prop = round(value / sum(value) *100))
+  mutate(prop = round(value / sum(value) *100), .keep = "unused")
 
 with_this_outcome <- this_outcome_waffle %>% 
   filter(group == params$outcome) %>% 
   pull(prop)
 
 this_outcome_waffle %>% 
-  ggplot(aes(fill = group, values = prop)) +
-  waffle::geom_waffle() +
-  scale_fill_manual(
-    name = NULL,
-    values = c("grey", "blue"),
-    labels = c(paste0("Not ", params$outcome), params$outcome)
-  ) +
-  coord_equal() +
-  theme_void() +
-  ggtitle(paste0(with_this_outcome, "% of the in-scope libraries activities delivered in ", paste0(params$month, " ", params$year), "\nwere said to have delivered against the ", params$outcome, " outcome"))
+  deframe() %>% 
+  waffle(
+    colors = c("blue", "grey"),
+    legend_pos = "bottom",
+    title = paste0(with_this_outcome, "% of the in-scope libraries activities delivered in\n", paste0(params$month, " ", params$year), " were said to have delivered against the\n", params$outcome, " outcome"),
+    xlab = paste0("1 square = 1% of programmes and events delivered in ", params$month, " ", params$year)
+    )
 ```
 
 ```{r outcome_explorer_data}
