@@ -75,28 +75,6 @@ Of these `r prettyNum(monthly_submissions, big.mark = ",")` activities, a total 
 * Talanoa Pasifika
 * Tātou Belonging
 
-
-```{r overall_waffle}
-overall_waffle <- tibble(
-  group = factor(c("With Outcome", "Without Outcome")),
-  value = c(outcome_submissions, (monthly_submissions-outcome_submissions))
-  ) %>% 
-  mutate(prop = round(value / sum(value) *100), .keep = "unused")
-
-with_outcomes <- overall_waffle %>% 
-  filter(group == "With Outcome") %>% 
-  pull(prop)
-
-overall_waffle %>% 
-  deframe() %>% 
-  waffle(
-    colors = c("blue", "grey"),
-    legend_pos = "bottom",
-    title = paste0(with_outcomes, "% of the in-scope libraries activities delivered in\n", paste0(params$month, " ", params$year), " were said to have delivered against\nat least one of the outcomes"),
-    xlab = paste0("1 square = 1% of programmes and events delivered in ", params$month, " ", params$year)
-    )
-```
-
 Of the `r prettyNum(monthly_submissions, big.mark = ",")` activities that were delivered in `r params$month` `r params$year`, **`r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")`** were said to have delivered against the [`r params$outcome` outcome](`r params$outcome_url`). In other words, **`r round((this_outcome$sessions/monthly_submissions)*100)`%** of the in-scope libraries activities delivered in `r params$month` `r params$year` were said to have delivered against the `r params$outcome` outcome.
 
 ```{r outcome_waffle}
@@ -121,29 +99,22 @@ this_outcome_waffle %>%
 ```
 
 ```{r outcome_explorer_data}
-# show_outcome_explorer <- outcome_data %>%
-#   distinct(id) %>%
-#   nrow() < 101
-
 outcome_explorer_data <- outcome_data %>% 
   distinct(id, .keep_all = TRUE) %>% 
   mutate(location = paste0(in_which_local_board_was_the_session_delivered, ": ", location), delivery_datetime = ymd_hms(delivery_datetime), delivery_date = stamp("Sunday, 30 November at 4.30pm", orders="AdBIMp", quiet = TRUE)(delivery_datetime)) %>% 
   select("Session Name" = what_was_the_name_of_the_session, "Format" = what_was_the_format_of_the_session, "Where was it delivered?" = location, "When was it delivered?" = delivery_date)
 ```
 
-<!-- `r if(show_outcome_explorer) {"For convenience, a limited view of the data for this outcome has been provided below (a more comprehensive view of the data can be found in the Data Explorer):"}` -->
-
 For convenience, a limited view of the data for sessions that were said to have delivered against this outcome during `r params$month` `r params$year` has been provided below (a more comprehensive view of the data can be found in the [Data Explorer](https://aklcouncil-my.sharepoint.com/:u:/g/personal/durbinl_aklc_govt_nz/ES56_6mDLOZIqrzoyLDpwU0B7R5rNPIhN2MYSSzAr_CYTA?download=1)). You can click on the column headers to re-sort the table accordingly.
 
 ```{r outcome_explorer_table}
-  caption <- paste0('A table showing some information about sessions that were said to deliver against the ', params$outcome, ' outcome in ', params$month, ' ', params$year)
+caption <- paste0('A table showing some information about sessions that were said to deliver against the ', params$outcome, ' outcome in ', params$month, ' ', params$year)
   
-  DT::datatable(
+DT::datatable(
   outcome_explorer_data,
   caption = caption
-  )
+)
 ```
-
 
 Looking specifically at the activities in `r params$month` `r params$year` that were said to have delivered against the `r params$outcome` outcome, **`r prettyNum(this_outcome$participants_adult, big.mark = ",")` adults** and **`r prettyNum(this_outcome$participants_children, big.mark = ",")` children** attended these sessions. These sessions ran for a total of **`r prettyNum(round(this_outcome$duration), big.mark = ",")` hours**.
 

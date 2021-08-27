@@ -31,6 +31,8 @@ summarise_data <- function(df, group) {
 
 # Create a basic table for the Outcomes report
 basic_table <- function(df, first_col, table_caption) {
+  common_table_headings <- c('Sessions', 'Participants (18+)', 'Participants (under 18)', 'Total Duration')
+  
   DT::datatable(
     df,
     colnames = c(first_col, common_table_headings),
