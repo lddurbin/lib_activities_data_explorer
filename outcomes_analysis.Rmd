@@ -127,8 +127,8 @@ this_outcome_waffle %>%
 
 outcome_explorer_data <- outcome_data %>% 
   distinct(id, .keep_all = TRUE) %>% 
-  mutate(location = paste0(in_which_local_board_was_the_session_delivered, ": ", location), delivery_datetime = stamp("Friday, 27 August at 4.30pm", quiet = TRUE)(as_datetime(delivery_datetime))) %>% 
-  select("Session Name" = what_was_the_name_of_the_session, "Format" = what_was_the_format_of_the_session, "Where was it delivered?" = location, "When was it delivered?" = delivery_datetime)
+  mutate(location = paste0(in_which_local_board_was_the_session_delivered, ": ", location), delivery_datetime = ymd_hms(delivery_datetime), delivery_date = stamp("Sunday, 30 November at 4.30pm", orders="AdBIMp", quiet = TRUE)(delivery_datetime)) %>% 
+  select("Session Name" = what_was_the_name_of_the_session, "Format" = what_was_the_format_of_the_session, "Where was it delivered?" = location, "When was it delivered?" = delivery_date)
 ```
 
 <!-- `r if(show_outcome_explorer) {"For convenience, a limited view of the data for this outcome has been provided below (a more comprehensive view of the data can be found in the Data Explorer):"}` -->
