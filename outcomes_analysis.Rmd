@@ -12,6 +12,7 @@ params:
   outcome_owner: " for Kirstin Kane"
   outcome_url: https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx
   outcome_filename: "literacy"
+  outcome_file_location: "https://aklcouncil-my.sharepoint.com/:u:/g/personal/durbinl_aklc_govt_nz/ERYJdFxlCldJlaO2WrWSfcUBaHjG4Xpyj4MRlK_J-IhgIg?e=ghPcMt?download=1"
 ---
 
 
@@ -21,7 +22,6 @@ library(rmdformats)
 library(tidyverse)
 library(scales)
 library(waffle)
-library(hrbrthemes)
 
 ## Global options
 options(max.print="75")
@@ -101,8 +101,8 @@ this_outcome_waffle %>%
 ```{r outcome_explorer_data}
 outcome_explorer_data <- outcome_data %>% 
   distinct(id, .keep_all = TRUE) %>% 
-  mutate(location = paste0(in_which_local_board_was_the_session_delivered, ": ", location), delivery_datetime = ymd_hms(delivery_datetime), delivery_date = stamp("Sunday, 30 November at 4.30pm", orders="AdBIMp", quiet = TRUE)(delivery_datetime)) %>% 
-  select("Session Name" = what_was_the_name_of_the_session, "Format" = what_was_the_format_of_the_session, "Where was it delivered?" = location, "When was it delivered?" = delivery_date)
+  mutate(location = paste0(in_which_local_board_was_the_session_delivered, ": ", location), delivery_datetime = ymd_hms(delivery_datetime), delivery_date = stamp("Sunday, 30 November at 4.30pm", orders="AdBIMp", quiet = TRUE)(delivery_datetime),participants = (rowSums(across(starts_with("how_many_")), na.rm = TRUE))) %>% 
+  select("Session Name" = what_was_the_name_of_the_session, "Format" = what_was_the_format_of_the_session, "Where was it delivered?" = location, "When was it delivered?" = delivery_date,  "How many people participated?" = participants)
 ```
 
 For convenience, a limited view of the data for sessions that were said to have delivered against this outcome during `r params$month` `r params$year` has been provided below (a more comprehensive view of the data can be found in the [Data Explorer](https://aklcouncil-my.sharepoint.com/:u:/g/personal/durbinl_aklc_govt_nz/ES56_6mDLOZIqrzoyLDpwU0B7R5rNPIhN2MYSSzAr_CYTA?download=1)). You can click on the column headers to re-sort the table accordingly.
@@ -456,14 +456,19 @@ other_outcomes <- setdiff(c("Kia ora Tāmaki Makaurau", "Literacy", "Talanoa", "
   str_replace("Tātou / Belonging", "Belonging") %>% 
   sort()
 
-other_reports <- setdiff(str_split(Sys.getenv("OUTCOMES"), " ") %>% unlist(), params$outcome_filename) %>% sort()
+filepaths <- Sys.getenv() %>%
+  enframe() %>%
+  filter(word(name, 2, sep = fixed("_")) == "URL") %>% 
+  mutate(value = as.character(value)) %>%
+  pull(value)
+
+other_reports <- setdiff(filepaths, params$outcome_file_location)
 ```
 
+To view similar information on sessions held in `r paste0(params$month, " ", params$year)` that were said to deliver against the other outcome areas, you can download the relevant reports using the links below:
 
-To view similar information on sessions held in `r paste0(params$month, " ", params$year)` that were said to deliver against the other outcome areas, you can navigate to the relevant reports using the links below:
-
-* [`r other_outcomes[1]`](`r paste0(other_reports[1], ".html")`)
-* [`r other_outcomes[2]`](`r paste0(other_reports[2], ".html")`)
-* [`r other_outcomes[3]`](`r paste0(other_reports[3], ".html")`)
-* [`r other_outcomes[4]`](`r paste0(other_reports[4], ".html")`)
-* [`r other_outcomes[5]`](`r paste0(other_reports[5], ".html")`)
+* [`r other_outcomes[1]`](`r (other_reports[1])`)
+* [`r other_outcomes[2]`](`r (other_reports[2])`)
+* [`r other_outcomes[3]`](`r (other_reports[3])`)
+* [`r other_outcomes[4]`](`r (other_reports[4])`)
+* [`r other_outcomes[5]`](`r (other_reports[5])`)
