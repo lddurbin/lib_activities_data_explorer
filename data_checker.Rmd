@@ -35,7 +35,7 @@ source("data_prep.R")
 
 Here you can view summary information about data entry agent activity.
 
-This data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**. The data will be refreshed on the first working day of each month.
+This data was last refreshed on **`r stamp("Sunday, May 1 2000 at 1.30pm")(lastModified(files) %>% with_tz("NZ"))`**.
 
 ```{r data_checker_prep, echo=FALSE, message=FALSE, warning=FALSE, message=FALSE}
 

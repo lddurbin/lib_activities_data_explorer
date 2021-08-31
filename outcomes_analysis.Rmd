@@ -190,6 +190,120 @@ if(nrow(outcome_stats) > 1) {
 }
 ```
 
+`r if(params$outcome == "Literacy") {"At the broadest level, literacy programmes are designed for particular age groups: adults, youths, and children. The table below shows how many sessions designed to *exclusively* benefit adults were said to have delivered against each outcome, the number of adults (aged 18+) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
+
+
+```{r adult_literacy_outcomes_data}
+if(params$outcome == "Literacy") {
+  literacy_data <- outcome_data %>%
+    select(id, starts_with(c("how_many_", "what_was_the_duration_")), outcome_attribute) %>% 
+    left_join(concat_rows(outcome_data, age_group), by = "id")
+  
+  adult_literacy_data <- literacy_data %>% 
+    filter(!str_detect(str_to_lower(age_group), "youth") & !str_detect(str_to_lower(age_group), "children")) %>% 
+    distinct(id, outcome_attribute, .keep_all = TRUE) %>% 
+    group_by(outcome_attribute) %>%
+    summarise(
+      sessions = n_distinct(id),
+      participants_adult = sum(how_many_adults_aged_18_attended_in_person_at_this_session, na.rm = TRUE),
+      duration = sum(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour, na.rm = TRUE)/60
+    )
+}
+```
+
+```{r adult_literacy_outcomes_table}
+if(params$outcome == "Literacy") {
+  caption <- paste0('Summary information per ', params$outcome, ' outcome for the adult ', params$outcome, ' activities delivered in ', params$month, ' ', params$year)
+  
+  DT::datatable(
+    adult_literacy_data,
+    colnames = c('Outcome', 'Sessions', 'Participants (18+)', 'Total Duration'),
+    caption = caption,
+    options = list(dom = 't'),
+    rownames = FALSE
+  )
+}
+```
+
+`r if(params$outcome == "Literacy") {"And here is a graphical representation of the same information:"}`
+
+```{r adult_literacy_outcomes_chart}
+if(params$outcome == "Literacy") {
+  adult_literacy_data %>% 
+    pivot_longer(2:4, names_to = "metric", values_to = "value") %>% 
+    mutate(metric = case_when(
+      metric == "sessions" ~ "Sessions",
+      metric == "participants_adult" ~ "Participants (18+)",
+      metric == "duration" ~ "Total Duration (hours)"
+    )) %>% 
+    mutate(metric = factor(metric, levels = c("Sessions", "Total Duration (hours)", "Participants (18+)"))) %>%
+    ggplot(mapping = aes(x = tidytext::reorder_within(outcome_attribute, value, metric), y = value)) +
+    geom_col(fill = "blue") +
+    tidytext::scale_x_reordered() +
+    facet_wrap("metric", scales = "free", ncol = 1) +
+    scale_fill_brewer(palette="Dark2") +
+    theme(axis.title = element_blank()) +
+    coord_flip()
+}
+```
+
+`r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to *exclusively* benefit youths were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
+
+```{r youth_literacy_outcomes_data}
+if(params$outcome == "Literacy") {
+  youths_literacy_data <- literacy_data %>% 
+    filter(!str_detect(str_to_lower(age_group), "adult") & !str_detect(str_to_lower(age_group), "children")) %>% 
+    distinct(id, outcome_attribute, .keep_all = TRUE) %>% 
+    summarise_data(outcome_attribute)
+}
+```
+
+```{r youth_literacy_outcomes_table}
+if(params$outcome == "Literacy") {
+  caption <- paste0('Summary information per ', params$outcome, ' outcome for the youth ', params$outcome, ' activities delivered in ', params$month, ' ', params$year)
+  
+youths_literacy_data %>% 
+  basic_table("Outcome", caption)
+}
+```
+
+`r if(params$outcome == "Literacy") {"And here is a graphical representation of the same information:"}`
+
+```{r youth_literacy_outcomes_chart}
+if(params$outcome == "Literacy") {
+  youths_literacy_data %>% 
+    basic_chart(outcome_attribute)
+}
+```
+
+`r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to *exclusively* benefit children (pre-school and primary) were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
+
+```{r child_literacy_outcomes_data}
+if(params$outcome == "Literacy") {
+  child_literacy_data <- literacy_data %>% 
+    filter(!str_detect(str_to_lower(age_group), "adult") & !str_detect(str_to_lower(age_group), "youth")) %>% 
+    distinct(id, outcome_attribute, .keep_all = TRUE) %>% 
+    summarise_data(outcome_attribute)
+}
+```
+
+```{r child_literacy_outcomes_table}
+if(params$outcome == "Literacy") {
+  caption <- paste0('Summary information per ', params$outcome, ' outcome for the children\'s ', params$outcome, ' activities delivered in ', params$month, ' ', params$year)
+  
+child_literacy_data %>% 
+  basic_table("Outcome", caption)
+}
+```
+
+`r if(params$outcome == "Literacy") {"And here is a graphical representation of the same information:"}`
+
+```{r child_literacy_outcomes_chart}
+if(params$outcome == "Literacy") {
+  child_literacy_data %>% 
+    basic_chart(outcome_attribute)
+}
+```
 
 A session can deliver against more than one outcome. When sessions deliver against `r params$outcome`, the table below shows the number of times such sessions deliver against any of the other outcomes, as well as the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
