@@ -64,11 +64,6 @@ local_board_teams <- local_board_overall %>%
   get_teams_data() %>% 
   filter(highlight_local_board == TRUE)
 
-local_board_combo <- anti_join(local_board_highlighted, local_board_teams, by = "id") %>%
-  mutate(in_which_local_board_was_the_session_delivered = local_board, team_involvement = FALSE) %>% 
-  rename(delivery_team = delivery_library_names) %>% 
-  bind_rows(local_board_teams %>% mutate(team_involvement = TRUE))
-
 
 # Stats by Local Board ----------------------------------------------------
 
@@ -98,22 +93,26 @@ local_board_summary %>%
 
 location_submissions <- local_board_highlighted %>%
   distinct(id, .keep_all = TRUE) %>% 
-  count(location, name = "sessions", sort = TRUE) 
-# count(location, CC_staff_agents, name = "sessions", sort = TRUE) 
+  count(location, CC_staff_agents, name = "sessions", sort = TRUE) %>% 
+  mutate(location = as.character(location), location = case_when(
+    location == "Central City Library" ~ "Central City Community Hub",
+    location == "Ellen Melville Centre" ~ "Central City Community Hub",
+    !is.na(location) ~ location
+  )) %>% 
+  left_join(delivery_team_data, by = c("location" = "delivery_team")) %>% 
+  with_groups(location, mutate, perc = round(sessions/sum(sessions)*100)) %>% 
+  filter(!is.na(local_board)) %>% 
+  mutate(CC_staff_agents = case_when(
+    CC_staff_agents ~ "Yes",
+    !CC_staff_agents ~ "No"
+  ))
 
-location_summary <- group_and_sum(local_board_highlighted %>% distinct(id, .keep_all = TRUE), location, location) %>% 
-  left_join(location_submissions, by = "location") %>% 
-  pivot_longer(cols = 2:5, names_to = "metric") %>% 
-  mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
-
-location_summary %>% 
-  ggplot(mapping = aes(x = tidytext::reorder_within(location, value, metric), y = value)) +
-  geom_col(fill = "blue") +
-  tidytext::scale_x_reordered() +
-  facet_wrap("metric", scales = "free") +
-  geom_text(aes(label = prettyNum(value, big.mark = ",")), hjust = 1.2, colour = "white") +
-  theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
-  coord_flip()
+location_submissions %>% 
+ggplot(mapping = aes(x = location, y = perc, fill = CC_staff_agents)) +
+  geom_bar(aes(fill = CC_staff_agents), position="dodge", stat="identity") +
+  facet_wrap("local_board", scales = "free") +
+  theme(axis.title = element_blank(), legend.position = "bottom") +
+  labs(fill = "Were Connected Communities staff involvement in delivering?")
 
 
 # Stats by delivery team --------------------------------------------------
