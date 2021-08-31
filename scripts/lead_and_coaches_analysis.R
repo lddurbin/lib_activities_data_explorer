@@ -105,7 +105,8 @@ location_submissions <- local_board_highlighted %>%
   mutate(CC_staff_agents = case_when(
     CC_staff_agents ~ "Yes",
     !CC_staff_agents ~ "No"
-  ))
+  )) %>% 
+  mutate(location = str_remove_all(location, " Library| Community Hub"))
 
 location_submissions %>% 
 ggplot(mapping = aes(x = location, y = perc, fill = CC_staff_agents)) +
