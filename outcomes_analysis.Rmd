@@ -156,10 +156,35 @@ formats %>%
 
 ## Outcome Detail
 
+A session can deliver against more than one outcome. When sessions deliver against `r params$outcome`, the table below shows the number of times such sessions deliver against any of the other outcomes, as well as the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+
+```{r outcome_crossover_table}
+# Stats for sessions that delivered against this outcome area that also delivered against other outcome areas
+outcomes_crossover <- outcomes %>% 
+  filter(outcome != params$outcome) %>% 
+  right_join(outcome_data %>% select(-outcome), "id") %>% 
+  filter(!is.na(outcome)) %>% 
+  distinct(id, outcome, .keep_all = TRUE) %>% 
+  summarise_data(outcome) %>% 
+  mutate(outcome = paste0(params$outcome, " + ", outcome))
+
+  caption <- paste0('Summary information per crossover outcome for the ', params$outcome, ' activities delivered in ', params$month, ' ', params$year)
+  basic_table(outcomes_crossover, "Outcome", caption)
+```
+
+And here is a graphical representation of the same information:
+
+```{r outcome_crossover_chart}
+  outcomes_crossover %>% 
+  basic_chart(outcome)
+```
+
+
 ```{r outcome_stats_data}
 # Stats for sessions that delivered against a given outcome
 outcome_stats <- outcome_data %>%
   distinct(id, outcome, outcome_attribute, .keep_all = TRUE) %>% 
+  filter(outcome != "Literacy") %>% 
   group_by(outcome_attribute) %>%
   summarise(
     sessions = n_distinct(id),
@@ -189,6 +214,8 @@ if(nrow(outcome_stats) > 1) {
   basic_chart(outcome_attribute)
 }
 ```
+
+`r if(params$outcome == "Literacy") {"### Adult Literacy"}`
 
 `r if(params$outcome == "Literacy") {"At the broadest level, literacy programmes are designed for particular age groups: adults, youths, and children. The table below shows how many sessions designed to *exclusively* benefit adults were said to have delivered against each outcome, the number of adults (aged 18+) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
 
@@ -247,6 +274,8 @@ if(params$outcome == "Literacy") {
 }
 ```
 
+`r if(params$outcome == "Literacy") {"### Youth Literacy"}`
+
 `r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to *exclusively* benefit youths were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
 
 ```{r youth_literacy_outcomes_data}
@@ -276,12 +305,14 @@ if(params$outcome == "Literacy") {
 }
 ```
 
-`r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to *exclusively* benefit children (pre-school and primary) were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
+`r if(params$outcome == "Literacy") {"### Children\'s Literacy"}`
+
+`r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to benefit children (pre-school and primary) were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
 
 ```{r child_literacy_outcomes_data}
 if(params$outcome == "Literacy") {
   child_literacy_data <- literacy_data %>% 
-    filter(!str_detect(str_to_lower(age_group), "adult") & !str_detect(str_to_lower(age_group), "youth")) %>% 
+    filter(str_detect(str_to_lower(age_group), "children")) %>% 
     distinct(id, outcome_attribute, .keep_all = TRUE) %>% 
     summarise_data(outcome_attribute)
 }
@@ -303,29 +334,6 @@ if(params$outcome == "Literacy") {
   child_literacy_data %>% 
     basic_chart(outcome_attribute)
 }
-```
-
-A session can deliver against more than one outcome. When sessions deliver against `r params$outcome`, the table below shows the number of times such sessions deliver against any of the other outcomes, as well as the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
-
-```{r outcome_crossover_table}
-# Stats for sessions that delivered against this outcome area that also delivered against other outcome areas
-outcomes_crossover <- outcomes %>% 
-  filter(outcome != params$outcome) %>% 
-  right_join(outcome_data %>% select(-outcome), "id") %>% 
-  filter(!is.na(outcome)) %>% 
-  distinct(id, outcome, .keep_all = TRUE) %>% 
-  summarise_data(outcome) %>% 
-  mutate(outcome = paste0(params$outcome, " + ", outcome))
-
-  caption <- paste0('Summary information per crossover outcome for the ', params$outcome, ' activities delivered in ', params$month, ' ', params$year)
-  basic_table(outcomes_crossover, "Outcome", caption)
-```
-
-And here is a graphical representation of the same information:
-
-```{r outcome_crossover_chart}
-  outcomes_crossover %>% 
-  basic_chart(outcome)
 ```
 
 
