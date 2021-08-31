@@ -2,8 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-data_explorer.html
-data_checker.html
-outcomes_analysis.html
+*.html
 .Renviron
 plots/
+.DS_Store

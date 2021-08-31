@@ -1,6 +1,6 @@
 # Knit file based on chosen outcome
 render_analysis <- function(outcome_data, month, year) {
-  rmarkdown::render("outcomes_analysis.Rmd", output_file = paste0("Reports/", outcome_data[4]), params = list(
+  rmarkdown::render(here::here("Reports/outcomes_analysis.Rmd"), output_file = paste0(here::here("Reports/outcomes/"), outcome_data[4]), params = list(
     year = year,
     month = month,
     outcome = outcome_data[1],

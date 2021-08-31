@@ -35,7 +35,7 @@ opts_knit$set(width=75)
 
 common_table_headings <- c('Sessions', 'Participants (18+)', 'Participants (under 18)', 'Total Duration')
 
-source("data_prep.R")
+source(here::here("scripts/data_prep.R"))
 ```
 
 ## Overview

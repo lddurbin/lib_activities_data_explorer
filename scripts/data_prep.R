@@ -4,11 +4,11 @@ library("readxl", warn.conflicts = FALSE) # source data is an Excel spreadsheet
 library("fs", warn.conflicts = FALSE) # to list files in a directory
 library("lubridate", warn.conflicts = FALSE) # easy date manipulation
 
-source("functions.R")
+source(here::here("scripts/functions.R"))
 
-files <- dir_ls("data", regexp = "\\.xlsx$")
+files <- dir_ls(here::here("data"), regexp = "\\.xlsx$")
 
-normalised_locations <- read_csv("data/expected_locations.csv", col_types = "cc") %>%
+normalised_locations <- read_csv(here::here("data/expected_locations.csv"), col_types = "cc") %>%
   as_tibble() %>% 
   select(location)
 
@@ -62,9 +62,9 @@ realm_languages <- multichoice_splitting(df, which_language_s_was_the_session_de
     !is.na(realm_language) ~ realm_language
   ))
 
-source("outcomes.R")
+source(here::here("scripts/outcomes.R"))
 
-source("delivery_agents.R")
+source(here::here("scripts/delivery_agents.R"))
 
 # Join all the tables into a single tibble
 joined_data <- plyr::join_all(list(base_table, outcomes, age_groups, delivery_agents, realm_languages, target_groups), "id") %>% 
