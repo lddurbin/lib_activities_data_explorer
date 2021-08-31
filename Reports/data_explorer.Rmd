@@ -27,7 +27,7 @@ library("crosstalk", warn.conflicts = FALSE)
 library("htmltools", warn.conflicts = FALSE)
 library("tippy", warn.conflicts = FALSE)
 
-source("data_prep.R")
+source(here::here("scripts/data_prep.R"))
 
 ```
 
@@ -40,7 +40,7 @@ The data will be refreshed weekly on Fridays, as well as on the first working da
 ```{r data_explorer_prep, echo=FALSE, message=FALSE}
 
 # Create these columns if they don't exist
-cols <- read_csv("data/expected_column_headers.csv") %>%
+cols <- read_csv(here::here("data/expected_column_headers.csv")) %>%
   as_tibble(.rows = NULL) %>%
   add_row()
 
