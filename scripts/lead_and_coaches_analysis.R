@@ -1,6 +1,6 @@
 common_table_headings <- c('Sessions', 'Participants (18+)', 'Participants (under 18)', 'Hours of Delivery')
 
-source("data_prep.R")
+source(here::here("scripts/data_prep.R"))
 
 local_board_data <- read_csv("data/local_board_groups.csv", col_types = "cdcc")
 
@@ -403,16 +403,15 @@ session_format_submissions <- local_board_teams %>%
   count(delivery_team, session_format = what_was_the_format_of_the_session, name = "sessions", sort = TRUE) %>% 
   with_groups(c(delivery_team), mutate, perc = round(sessions/sum(sessions)*100))
 
-# session_format_summary <- group_and_sum(local_board_teams %>% distinct(id, .keep_all = TRUE), session_format, what_was_the_format_of_the_session) %>% 
-#   left_join(session_format_submissions, by = "session_format") %>% 
-#   pivot_longer(cols = 2:5, names_to = "metric") %>% 
-#   mutate(metric = str_replace(metric, "_", " ") %>% str_to_title() %>% factor(levels = c("Sessions", "Total Hours", "Adult Participants", "Child Participants")))
+session_format_ranking <- session_format_submissions %>%
+  arrange(delivery_team, desc(perc)) %>% 
+  with_groups(delivery_team, mutate, rank = row_number())
 
-session_format_submissions %>% 
-  ggplot(mapping = aes(x = tidytext::reorder_within(session_format, perc, delivery_team), y = perc)) +
+session_format_ranking %>% 
+  ggplot(mapping = aes(x = tidytext::reorder_within(delivery_team, perc, session_format), y = perc)) +
   geom_col(fill = "blue") +
   tidytext::scale_x_reordered() +
-  facet_wrap("delivery_team", scales = "free") +
+  facet_wrap("session_format", scales = "free") +
   geom_text(aes(label = paste0(perc, "%")), hjust = 1.2, colour = "white") +
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
