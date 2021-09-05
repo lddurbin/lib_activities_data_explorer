@@ -176,17 +176,9 @@ delivery_team_children_sessions_summary %>%
 slope_chart_children <- delivery_team_children_sessions_summary %>%
   filter(metric %in% c("Sessions", "Child Participants")) %>% 
   left_join(delivery_team_data, by = "delivery_team") %>% 
-  mutate(local_board = case_when(
-    delivery_team == "Central City Library" ~ "Waitematā",
-    delivery_team != "Central City Library" ~ local_board
-  )) %>% 
-  mutate(highlight_team = case_when(
-    delivery_team %in% c("Onehunga & Oranga Community Hub", "St Heliers Library") ~ TRUE,
-    !delivery_team %in% c("Onehunga & Oranga Community Hub", "St Heliers Library") ~ FALSE,
-  )) %>% 
   arrange(desc(value), metric, delivery_team) %>% 
   with_groups(c(metric), mutate, rank = rank(value, ties.method = "first")) %>% 
-  select(-c(value:highlight_team)) %>%
+  select(-c(value:local_board)) %>%
   pivot_wider(names_from = metric, values_from = rank, values_fill = 0) %>%
   clean_names() %>% 
   mutate(change = case_when(
@@ -196,7 +188,8 @@ slope_chart_children <- delivery_team_children_sessions_summary %>%
   )) %>% 
   pivot_longer(cols = child_participants:sessions, names_to = "metric", values_to = "rank") %>% 
   mutate(metric = str_replace(metric, "_", " ") %>% str_to_title()) %>% 
-  left_join(delivery_team_children_sessions_summary, by = c("delivery_team", "metric"))
+  left_join(delivery_team_children_sessions_summary, by = c("delivery_team", "metric")) %>% 
+  mutate(delivery_team = str_remove_all(delivery_team, " Library| Community Hub"))
 
 slope_chart_children %>% 
   ggplot(aes(x = reorder(metric, desc(metric)), y = rank, group = delivery_team)) +
@@ -207,13 +200,13 @@ slope_chart_children %>%
             aes(label = paste0(delivery_team, " (", (value), ")")) ,
             hjust = 1.1,
             fontface = "bold",
-            size = 3) +
+            size = 3.5) +
   geom_text(data = slope_chart_children %>% filter(metric == "Child Participants"),
             aes(label = paste0(delivery_team, " (", (value), ")")) ,
             hjust = -.3,
             fontface = "bold",
-            size = 3) +
-  theme_wsj(base_size = 9)+
+            size = 3.5) +
+  theme_wsj(base_size = 10)+
   theme(legend.position = "none") +
   theme(axis.title.y     = element_blank()) +
   theme(axis.text.y      = element_blank()) +
@@ -227,7 +220,7 @@ slope_chart_children %>%
   # Format title & subtitle
   theme(plot.title       = element_text(size=14, face = "bold", hjust = 0.5)) +
   theme(plot.subtitle    = element_text(hjust = 0.5)) +
-  labs(title = "The teams delivering the most number of children's sessions\naren't the one reaching the most number of children")
+  labs(title = "Even though it didn't deliver the most number of children's sessions\nduring July, Manurewa had the highest number of children\nparticipating across these sessions")
 
 # What % of sessions are they delivering onsite vs offsite?
 library("ggtext")
