@@ -8,8 +8,8 @@ output:
 params:
   year: 2021
   month: July
-  outcome: "Literacy"
-  outcome_owner: " for Kirstin Kane"
+  outcome: "Kia ora Tāmaki Makaurau"
+  outcome_owner: " for Judith Waaka"
   outcome_url: https://aklcouncil.sharepoint.com/sites/tools-to-do-my-job/SitePages/Literacy-@-Auckland-Libraries.aspx
   outcome_file_location: "https://aklcouncil-my.sharepoint.com/:u:/g/personal/durbinl_aklc_govt_nz/ERYJdFxlCldJlaO2WrWSfcUBaHjG4Xpyj4MRlK_J-IhgIg?e=ghPcMt?download=1"
 ---
