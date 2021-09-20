@@ -33,7 +33,7 @@ opts_chunk$set(echo=FALSE,
                warning=FALSE)
 opts_knit$set(width=75)
 
-common_table_headings <- c('Sessions', 'Participants (18+)', 'Participants (under 18)', 'Total Duration')
+common_table_headings <- c('Sessions', 'Participation (18+)', 'Participation (under 18)', 'Total Duration')
 
 source(here::here("scripts/data_prep.R"))
 ```
@@ -130,7 +130,7 @@ There are many ways to group these sessions, and in the data entry form we ask u
 * Talk
 * Other (i.e. none of the above)
 
-The following table shows, for each of these categories, the number sessions said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The following table shows, for each of these categories, the number sessions said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r formats_table}
 # What was the format of the session?
@@ -156,7 +156,7 @@ formats %>%
 
 ## Outcome Detail
 
-A session can deliver against more than one outcome. When sessions deliver against `r params$outcome`, the table below shows the number of times such sessions deliver against any of the other outcomes, as well as the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+A session can deliver against more than one outcome. When sessions deliver against `r params$outcome`, the table below shows the number of times such sessions deliver against any of the other outcomes, as well as the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r outcome_crossover_table}
 # Stats for sessions that delivered against this outcome area that also delivered against other outcome areas
@@ -196,7 +196,7 @@ outcome_stats <- outcome_data %>%
 show_outcome_stats_table <- nrow(outcome_stats) > 1
 ```
 
-`r if(show_outcome_stats_table) {"This outcome area has several outcomes associated with it. The table below shows how many sessions were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
+`r if(show_outcome_stats_table) {"This outcome area has several outcomes associated with it. The table below shows how many sessions were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
 
 ```{r outcome_stats_table}
 # Show outcome stats where there are multiple outcomes per outcome area
@@ -217,7 +217,7 @@ if(nrow(outcome_stats) > 1) {
 
 `r if(params$outcome == "Literacy") {"### Adult Literacy"}`
 
-`r if(params$outcome == "Literacy") {"At the broadest level, literacy programmes are designed for particular age groups: adults, youths, and children. The table below shows how many sessions designed to *exclusively* benefit adults were said to have delivered against each outcome, the number of adults (aged 18+) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
+`r if(params$outcome == "Literacy") {"At the broadest level, literacy programmes are designed for particular age groups: adults, youths, and children. The table below shows how many sessions designed to *exclusively* benefit adults were said to have delivered against each outcome, the number of adults (aged 18+) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
 
 
 ```{r adult_literacy_outcomes_data}
@@ -244,7 +244,7 @@ if(params$outcome == "Literacy") {
   
   DT::datatable(
     adult_literacy_data,
-    colnames = c('Outcome', 'Sessions', 'Participants (18+)', 'Total Duration'),
+    colnames = c('Outcome', 'Sessions', 'Participation (18+)', 'Total Duration'),
     caption = caption,
     options = list(dom = 't'),
     rownames = FALSE
@@ -260,10 +260,10 @@ if(params$outcome == "Literacy") {
     pivot_longer(2:4, names_to = "metric", values_to = "value") %>% 
     mutate(metric = case_when(
       metric == "sessions" ~ "Sessions",
-      metric == "participants_adult" ~ "Participants (18+)",
+      metric == "participants_adult" ~ "Participation (18+)",
       metric == "duration" ~ "Total Duration (hours)"
     )) %>% 
-    mutate(metric = factor(metric, levels = c("Sessions", "Total Duration (hours)", "Participants (18+)"))) %>%
+    mutate(metric = factor(metric, levels = c("Sessions", "Total Duration (hours)", "Participation (18+)"))) %>%
     ggplot(mapping = aes(x = tidytext::reorder_within(outcome_attribute, value, metric), y = value)) +
     geom_col(fill = "blue") +
     tidytext::scale_x_reordered() +
@@ -276,7 +276,7 @@ if(params$outcome == "Literacy") {
 
 `r if(params$outcome == "Literacy") {"### Youth Literacy"}`
 
-`r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to *exclusively* benefit youths were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
+`r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to *exclusively* benefit youths were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
 
 ```{r youth_literacy_outcomes_data}
 if(params$outcome == "Literacy") {
@@ -307,7 +307,7 @@ if(params$outcome == "Literacy") {
 
 `r if(params$outcome == "Literacy") {"### Children\'s Literacy"}`
 
-`r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to benefit children (pre-school and primary) were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
+`r if(params$outcome == "Literacy") {"The table below shows how many sessions designed to benefit children (pre-school and primary) were said to have delivered against each outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly."}`
 
 ```{r child_literacy_outcomes_data}
 if(params$outcome == "Literacy") {
@@ -349,7 +349,7 @@ local_boards <- outcome_data %>%
 
 Sessions that were said to have delivered against the `r params$outcome` outcome were held in **`r nrow(local_boards)`** Local Boards.
 
-The table below shows, for each of these Local Boards, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The table below shows, for each of these Local Boards, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r local_boards_table}
 # Show this data in a table
@@ -392,7 +392,7 @@ caption <- paste0('Summary information per location for the ', params$outcome, '
 
 Programmes and events can be delivered or co-delivered by Connected Communities staff, Auckland Council staff not based in Connected Communities, and anyone not employed by Auckland Council (such as paid providers, volunteers, community groups, authors etc.).
 
-The table below shows, for each of these types of delivery agents, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The table below shows, for each of these types of delivery agents, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r delivery_agent_type_data}
 # Which sorts of agents delivered them?
@@ -431,7 +431,7 @@ placed_based_teams <- outcome_data %>%
 
 In Connected Communities there are placed-based teams (i.e. staff based in Community Libraries and Community Hubs) and teams who serve the region (i.e. Libraries and Learning Unit, Māori Outcomes Unit, Community Impact Unit, and Heritage and Arts Unit). In `r paste0(params$month, " ", params$year)`, **`r nrow(placed_based_teams)`** placed-based teams delivered or co-delivered sessions that were said to have delivered against the `r params$outcome` outcome.
 
-The following table shows, for each placed-based team, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The following table shows, for each placed-based team, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r placed_based_teams_table}
 # Show this data in a table
@@ -451,7 +451,7 @@ regional_teams <- outcome_data %>%
 
 In `r paste0(params$month, " ", params$year)`, **`r nrow(regional_teams)`** regional teams delivered or co-delivered sessions that were said to have delivered against the `r params$outcome` outcome.
 
-The following table shows, for each regional Unit, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The following table shows, for each regional Unit, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r regional_teams_table}
 # Show this data in a table
@@ -463,7 +463,7 @@ basic_table(regional_teams, "Unit", caption)
 
 Some programmes and events were designed to benefit specific age groups. Of the `r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")` sessions that were said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(age_group)) %>% distinct(id) %>% nrow() %>% prettyNum(big.mark = ",")`** were designed to benefit a specific age group.
 
-The following table shows, for each age group, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The following table shows, for each age group, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r age_groups}
 # Which age groups were they designed to benefit?
@@ -486,7 +486,7 @@ And here is a graphical representation of the same information:
 
 Some Community Libraries and Community Hubs reach out to particular groups in the community, such as new migrants, people on low incomes, people with no (or limited) qualifcations etc. Of the `r this_outcome %>% pull(sessions) %>% prettyNum(big.mark = ",")` sessions that were said to deliver against the `r params$outcome` outcome in `r paste0(params$month, " ", params$year)`, **`r outcome_data %>% filter(!is.na(target_group)) %>% distinct(id) %>% nrow() %>% prettyNum(big.mark = ",")`** were designed to benefit a group of interest.
 
-The following table shows, for each group of interest, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The following table shows, for each group of interest, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r target_groups}
 # Which other groups were they designed to benefit?
@@ -512,7 +512,7 @@ And here is a graphical representation of the same information:
 
 In addition to English, we deliver programmes and events in a variety of other languages. In `r paste0(params$month, " ", params$year)`, a substantial part of **`r outcome_data %>% filter(!is.na(realm_language)) %>% distinct(id) %>% nrow() %>% prettyNum(big.mark = ",")`** `r params$outcome` sessions were delivered in languages other than English. By a "substantial part", we expect thar over half of the session was delivered in a language other than English.
 
-The following table shows, for each language other than English, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The following table shows, for each language other than English, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r languages}
 # Which non-English languages were they delivered in?
@@ -549,7 +549,7 @@ Some programmes and events are delivered in the context of a regional theme, whi
 * Te wiki o te reo Māori
 * Waitangi Day
 
-The following table shows, for each regional theme, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated in these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
+The following table shows, for each regional theme, the number sessions said to deliver against the `r params$outcome` outcome, the number of adults (aged 18+) and children (aged under 18) who participated across these sessions, and the total duration of these sessions in hours. You can click on the column headers to re-sort the table accordingly.
 
 ```{r regional_themes}
 # Which regional or national event was the session delivered in the context of?
