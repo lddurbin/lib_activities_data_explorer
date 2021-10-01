@@ -1,7 +1,7 @@
 ---
-title: "Programmes and Events Data Checker"
+title: "Libraries Programmes and Events Data Checker"
 author: "Lee Durbin"
-date: "19/07/2021"
+date: ""
 output:
   html_document
 theme: lumen
@@ -27,11 +27,10 @@ library("crosstalk", warn.conflicts = FALSE)
 library("htmltools", warn.conflicts = FALSE)
 library("tippy", warn.conflicts = FALSE)
 
-source("data_prep.R")
+source(here::here("scripts/data_prep.R"))
 
 ```
 
-## Data Checker
 
 Here you can view summary information about data entry agent activity.
 
@@ -90,7 +89,7 @@ latest_entry_data <- checker_data %>%
   summarise(latest_entry = max(submission_date), .groups = "drop") %>% 
   mutate(latest_entry_formatted = stamp("19 July, 2021", order = "dmy")(latest_entry))
 
-expected_teams <- read_csv("data/expected_teams.csv", col_types = "cc")
+expected_teams <- read_csv(here::here("data/expected_teams.csv"), col_types = "cc")
 
 data_checker <- left_join(change_in_entries, latest_entry_data, by = c("delivery_agent_or_location")) %>% 
   select(delivery_agent_or_location, latest_entry_formatted, everything())
