@@ -96,6 +96,7 @@ data_checker <- left_join(change_in_entries, latest_entry_data, by = c("delivery
 
 ```
 
+WHY ARE RANUI AND OTARA IN HERE?
 The following teams have not entered data through the form: **`r dplyr::setdiff(expected_teams$delivery_team, data_checker$delivery_agent_or_location)`**
 
 ```{r data_checker_table, echo=FALSE, warning=FALSE, include=TRUE}

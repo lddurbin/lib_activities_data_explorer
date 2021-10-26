@@ -20,4 +20,8 @@ environment <- c("Environment", "", "", "environment", Sys.getenv("ENVIRONMENT_U
 
 all_outcomes <- list(kia_ora, literacy, talanoa, belonging, heritage, environment)
 
-purrr::walk(all_outcomes, render_analysis, month = "July", year = 2021)
+purrr::walk(all_outcomes, render_analysis, month = "August", year = 2021)
+
+# Adult literacy analysis
+# joined_data %>%
+#   filter(outcome == "Literacy" & str_detect(str_to_lower(external_agent_names), "literacy aotearoa|english language partners") & str_detect(age_group, "children", negate = TRUE))

@@ -1,4 +1,4 @@
-library("ggthemes")
+library("ggthemes") # Extra Themes, Scales and Geoms for 'ggplot2'
 
 common_table_headings <- c('Sessions', 'Participants (18+)', 'Participants (under 18)', 'Hours of Delivery')
 
@@ -22,8 +22,8 @@ get_local_board_data <- function(df) {
   df %>% 
     left_join(local_board_data, by = "local_board") %>% 
     mutate(highlight_local_board = case_when(
-      local_board_region == "S" ~ TRUE,
-      local_board_region != "S" ~ FALSE
+      local_board_region == "NW" ~ TRUE,
+      local_board_region != "NW" ~ FALSE
     ))
 }
 
@@ -32,8 +32,8 @@ get_teams_data <- function(df) {
     left_join(delivery_team_data, by = "delivery_team") %>% 
     left_join(local_board_data, by = "local_board") %>% 
     mutate(highlight_local_board = case_when(
-      local_board_region == "S" ~ TRUE,
-      local_board_region != "S" ~ FALSE
+      local_board_region == "NW" ~ TRUE,
+      local_board_region != "NW" ~ FALSE
     ))
 }
 
@@ -220,10 +220,10 @@ slope_chart_children %>%
   # Format title & subtitle
   theme(plot.title       = element_text(size=14, face = "bold", hjust = 0.5)) +
   theme(plot.subtitle    = element_text(hjust = 0.5)) +
-  labs(title = "Even though it didn't deliver the most number of children's sessions\nduring July, Manurewa had the highest number of children\nparticipating across these sessions")
+  labs(title = "The teams delivering the most number of\nchildren's sessions aren't the ones\nreaching the most number of children")
 
 # What % of sessions are they delivering onsite vs offsite?
-library("ggtext")
+library("ggtext") # Improved Text Rendering Support for 'ggplot2'
 
 delivery_team_submissions_comparison <- local_board_teams %>%
   mutate(delivery_team = case_when(
@@ -588,3 +588,4 @@ regional_theme_summary %>%
   geom_text(aes(label = prettyNum(value, big.mark = ",")), hjust = 1.2, colour = "white") +
   theme(legend.position = "none", axis.title = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   coord_flip()
+

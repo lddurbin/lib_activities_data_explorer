@@ -16,7 +16,7 @@ always_allow_html: true
 }
 </style>
 
-<img src="https://www.aucklandcouncil.govt.nz/_layouts/15/ACWeb/images/ac-logo-large.svg" alt="Auckland Council logo" title="Auckland Council" style="position:absolute;top:10px;right:10px;width:200px" />
+<!-- <img src="https://www.aucklandcouncil.govt.nz/_layouts/15/ACWeb/images/ac-logo-large.svg" alt="Auckland Council logo" title="Auckland Council" style="position:absolute;top:10px;right:10px;width:200px" /> -->
 
 
 ```{r setup, include=FALSE}
