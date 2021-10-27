@@ -81,6 +81,8 @@ ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names,
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
 
+# Sessions vs participants per team -------------------------------------------------------
+
 sessions_participants <- online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   mutate(delivery_library_names = case_when(
@@ -93,12 +95,25 @@ sessions_participants <- online_sessions %>%
   ungroup() %>% 
   filter(!is.na(delivery_library_names)) %>% 
   group_by(delivery_library_names) %>% 
-  summarise(sessions = n(), total_participants = sum(total_participants), total_duration = round(sum(duration)/60))
+  summarise(sessions = n(), total_participants = sum(total_participants), total_duration = round(sum(duration)/60)) %>% 
+  mutate(alpha = case_when(
+    sessions > 5 | total_participants > 25 ~ 1,
+    TRUE ~ 0
+  ))
 
 ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
-  geom_point(aes(size=total_duration)) +
-  geom_text(label=sessions_participants$delivery_library_names, vjust = -1, hjust = 0) +
-  geom_vline(xintercept = 10) + geom_hline(yintercept = 125)
+  geom_point(size=3) +
+  geom_text(label=sessions_participants$delivery_library_names, vjust = -1, hjust = 0, alpha = sessions_participants$alpha) +
+  geom_vline(xintercept = max(sessions_participants$sessions)/2, color = "blue") +
+  geom_hline(yintercept = max(sessions_participants$total_participants)/2, color = "blue") +
+  annotate("label", x = 3, y = -10, label = "Fewer sessions, fewer participants", fill = "white") +
+  annotate("label", x = 15, y = -10, label = "More sessions, fewer participants", fill = "white") +
+  annotate("label", x = 3, y = 160, label = "Fewer sessions, more participants", fill = "white") +
+  annotate("label", x = 15, y = 160, label = "More sessions, more participants", fill = "white") +
+  scale_x_continuous(limits = c(0,22)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(axis.title = element_text(size = 14)) +
+  labs(y = "Participants", x = "Sessions")
 
 #Only 1 of the online events during lockdown was a pre-school activity. Some pre-recorded so not recorded here (Libraries FB)
 online_sessions %>%
