@@ -1,29 +1,34 @@
 library(ggtext)
 library(waffle)
 
-# 137 online sessions since 1 July 2021, 128 since 17 August 2021
-online_sessions <- joined_data %>% 
+online_sessions <- readRDS(here::here("data/joined_data.rds")) %>% 
   filter(online == TRUE)
 
-online_sessions %>% 
+# Number of sessions since 18 August 2021
+total_sessions <- online_sessions %>% 
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   distinct(id) %>% 
   nrow()
 
-online_sessions %>% 
+# Total participants since 18 August 2021
+total_participants <- online_sessions %>% 
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   distinct(id, across(ends_with("online_broadcast_of_this_session"))) %>% 
   rowwise() %>% 
   mutate(total_participants = sum(across(2:4), na.rm = TRUE), .keep = "unused") %>% 
   ungroup() %>% 
-  adorn_totals()
+  adorn_totals() %>% 
+  tail(1) %>% 
+  pull(total_participants)
 
-online_sessions %>% 
+# Total number of hours of programming since 18 August 2021
+total_duration <- online_sessions %>% 
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   distinct(id, what_was_the_duration_of_the_session_to_the_nearest_half_an_hour) %>% 
   adorn_totals() %>% 
   tail(1) %>% 
-  mutate(duration_hours = round(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour/60))
+  mutate(duration_hours = round(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour/60)) %>% 
+  pull(duration_hours)
 
 data <- online_sessions %>%
   distinct(id, .keep_all = TRUE) %>%
@@ -76,7 +81,7 @@ ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names,
   scale_fill_manual(values = c("grey", "red")) +
   geom_text(aes(label = lockdown_delivery_teams$n),  hjust = -0.3, colour = "black") +
   labs(
-    title = "Libraries staff have delivered 94 online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>",
+    title = paste0("Libraries staff have delivered ", total_sessions, " online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>"),
     subtitle = "Number of online sessions recorded via the Programmes and Events\nform that were delivered after 17 August 2021, and in which Connected\nCommunities staff were involved in delivery"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
@@ -96,15 +101,23 @@ sessions_participants <- online_sessions %>%
   filter(!is.na(delivery_library_names)) %>% 
   group_by(delivery_library_names) %>% 
   summarise(sessions = n(), total_participants = sum(total_participants), total_duration = round(sum(duration)/60)) %>% 
-  mutate(alpha = case_when(
-    sessions > 5 | total_participants > 25 ~ 1,
-    TRUE ~ 0
-  ))
+  mutate(max_participants = max(total_participants), max_sessions = max(sessions)) %>% 
+  mutate(
+    alpha = case_when(
+      sessions > 5 | total_participants > 24 ~ 1,
+      TRUE ~ 0
+    ),
+    color = case_when(
+      sessions < max_sessions/2 & total_participants > max_participants/2 ~ "red",
+      sessions > max_sessions/2 & total_participants < max_participants/2 ~ "blue",
+      TRUE ~ "black"
+    )
+  )
 
 # Research Central had one particularly popular event with 130 participants: https://www.eventfinda.co.nz/2021/the-memories-in-time-project-with-fiona-brooker/auckland
 ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
-  geom_point(size=3) +
-  geom_text(label=sessions_participants$delivery_library_names, vjust = -1, hjust = 0, alpha = sessions_participants$alpha) +
+  geom_point(size=3, color=sessions_participants$color) +
+  geom_text(label=sessions_participants$delivery_library_names, vjust = -1, hjust = 0, color = sessions_participants$color, alpha = sessions_participants$alpha) +
   geom_vline(xintercept = max(sessions_participants$sessions)/2, color = "blue") +
   geom_hline(yintercept = max(sessions_participants$total_participants)/2, color = "blue") +
   annotate("label", x = 3, y = -10, label = "Fewer sessions, fewer participants", fill = "white") +
@@ -114,7 +127,12 @@ ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
   scale_x_continuous(limits = c(0,22)) +
   ggthemes::theme_fivethirtyeight() +
   theme(axis.title = element_text(size = 14)) +
-  labs(y = "Participants", x = "Sessions")
+  labs(
+    title = "Whilst the Research Central team have delivered to <span style='color:red'>lots of<br>participants across relatively few sessions</span>, other teams<br>have delivered <span style='color:blue'>many more sessions to fewer participants</span>",
+    y = "Participants",
+    x = "Sessions"
+    ) +
+  theme(plot.title = element_markdown(lineheight = 1.1))
 
 #Only 1 of the online events during lockdown was a pre-school activity. Some pre-recorded so not recorded here (Libraries FB)
 online_sessions %>%
@@ -146,7 +164,7 @@ online_sessions %>%
 waffle(
   parts = c("Non-staff involvement" = 39,"Staff delivered" = 61), 
   colors = c("red", "grey"),
-  title = "<span style='color:red'><strong>Individuals not employed by Auckland Council</strong></span> were involved<br>in delivering <strong>39%</strong> of the 128 online activities during lockdown",
+  title = paste0("<span style='color:red'><strong>Individuals not employed by Auckland Council</strong></span> were involved<br>in delivering <strong>39%</strong> of the ", total_sessions, " online activities during lockdown"),
   xlab = "1 square = 1% of activities delivered during lockdown"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
@@ -168,7 +186,50 @@ online_sessions %>%
 waffle(
   parts = c("Bi-lingual" = 44,"Not bi-lingual" = 56), 
   colors = c("red", "grey"),
-  title = "<strong>44%</strong> of the 128 online activities delivered during<br>lockdown were <span style='color:red'><strong>bi-lingual sessions</strong></span> ",
+  title = paste0("<strong>44%</strong> of the ", total_sessions, " online activities delivered during lockdown<br>were <span style='color:red'><strong>bi-lingual sessions</strong></span>"),
   xlab = "1 square = 1% of activities delivered during lockdown"
 ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
+
+online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>%
+  distinct(id, realm_language) %>% 
+  filter(!is.na(realm_language)) %>% 
+  count(realm_language) %>% 
+  adorn_percentages(denominator = "col") %>% 
+  mutate(realm_language = paste0(realm_language, " (", n*100, "%)")) %>% 
+  treemap::treemap(
+    index = "realm_language",
+    vSize = "n",
+    type = "index",
+    title = "Half of the 56 bi-lingual sessions delivered during this lockdown were in Te reo Māori",
+    fontsize.title = 16,
+    aspRatio = 1.5
+    )
+
+
+# Session format ----------------------------------------------------------
+
+online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>%
+  distinct(id, format = what_was_the_format_of_the_session) %>% 
+  count(format) %>% 
+  ggplot(aes(x = reorder(format, n), y = n)) +
+  geom_col(fill = "blue") +
+  coord_flip() +
+  ggthemes::theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(), axis.text.x = element_blank(), legend.position = "none", axis.text.y = element_text(size = 12)) +
+  geom_text(aes(label = n),  hjust = -0.3, colour = "black", size = 5) +
+  labs(
+    title = paste0("Libraries staff have delivered ", total_sessions, " online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>"),
+    subtitle = "Number of online sessions recorded via the Programmes and Events\nform that were delivered after 17 August 2021, and in which Connected\nCommunities staff were involved in delivery"
+  ) +
+  theme(plot.title = element_markdown(lineheight = 1.1))
+
+ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names, lockdown_delivery_teams$n), y = lockdown_delivery_teams$n, fill = lockdown_delivery_teams$highlight)) +
+  geom_col() +
+  coord_flip() +
+  ggthemes::theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(), axis.text.x = element_blank(), legend.position = "none") +
+  scale_fill_manual(values = c("grey", "red")) +
+
