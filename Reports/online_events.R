@@ -101,6 +101,7 @@ sessions_participants <- online_sessions %>%
     TRUE ~ 0
   ))
 
+# Research Central had one particularly popular event with 130 participants: https://www.eventfinda.co.nz/2021/the-memories-in-time-project-with-fiona-brooker/auckland
 ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
   geom_point(size=3) +
   geom_text(label=sessions_participants$delivery_library_names, vjust = -1, hjust = 0, alpha = sessions_participants$alpha) +
