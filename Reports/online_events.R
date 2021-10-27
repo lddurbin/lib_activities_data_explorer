@@ -169,6 +169,11 @@ waffle(
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
 
+# Who were the external providers?
+external_providers <- online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  distinct(id, session_name = what_was_the_name_of_the_session, external_agent_names) %>% 
+  filter(!is.na(external_agent_names))
 
 # Bi-lingual --------------------------------------------------------------
 
@@ -225,11 +230,3 @@ online_sessions %>%
     subtitle = "Number of online sessions recorded via the Programmes and Events\nform that were delivered after 17 August 2021, and in which Connected\nCommunities staff were involved in delivery"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
-
-ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names, lockdown_delivery_teams$n), y = lockdown_delivery_teams$n, fill = lockdown_delivery_teams$highlight)) +
-  geom_col() +
-  coord_flip() +
-  ggthemes::theme_fivethirtyeight() +
-  theme(panel.grid.major = element_blank(), axis.text.x = element_blank(), legend.position = "none") +
-  scale_fill_manual(values = c("grey", "red")) +
-
