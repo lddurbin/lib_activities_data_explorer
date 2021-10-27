@@ -1,8 +1,29 @@
 library(ggtext)
+library(waffle)
 
-# 133 online sessions since 1 July 2021, 124 since 17 August 2021
+# 137 online sessions since 1 July 2021, 128 since 17 August 2021
 online_sessions <- joined_data %>% 
   filter(online == TRUE)
+
+online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  distinct(id) %>% 
+  nrow()
+
+online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  distinct(id, across(ends_with("online_broadcast_of_this_session"))) %>% 
+  rowwise() %>% 
+  mutate(total_participants = sum(across(2:4), na.rm = TRUE), .keep = "unused") %>% 
+  ungroup() %>% 
+  adorn_totals()
+
+online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  distinct(id, what_was_the_duration_of_the_session_to_the_nearest_half_an_hour) %>% 
+  adorn_totals() %>% 
+  tail(1) %>% 
+  mutate(duration_hours = round(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour/60))
 
 data <- online_sessions %>%
   distinct(id, .keep_all = TRUE) %>%
@@ -32,7 +53,7 @@ ggplot(mapping = aes(x = data$date, y = data$sessions)) +
 
 # Sessions per team -------------------------------------------------------
 
-# 90 sessions after 17 August where CC staff were involved in delivery (only 1 where more than one team collaborated).
+# 94 sessions after 17 August where CC staff were involved in delivery (only 1 where more than one team collaborated).
 lockdown_delivery_teams <- online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   mutate(delivery_library_names = case_when(
@@ -55,14 +76,36 @@ ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names,
   scale_fill_manual(values = c("grey", "red")) +
   geom_text(aes(label = lockdown_delivery_teams$n),  hjust = -0.3, colour = "black") +
   labs(
-    title = "Libraries staff have delivered 90 online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>",
-    subtitle = "Number of online sessions recorded via the Programmes and Events\nform that were delivered after 17 August 2021, and in which Libraries\nstaff were involved in delivery"
+    title = "Libraries staff have delivered 94 online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>",
+    subtitle = "Number of online sessions recorded via the Programmes and Events\nform that were delivered after 17 August 2021, and in which Connected\nCommunities staff were involved in delivery"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
+
+sessions_participants <- online_sessions %>%
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  mutate(delivery_library_names = case_when(
+    is.na(delivery_library_names) & !is.na(unit_3_teams) ~ unit_3_teams,
+    TRUE ~ delivery_library_names
+  )) %>% 
+  distinct(id, delivery_library_names, duration = what_was_the_duration_of_the_session_to_the_nearest_half_an_hour, across(starts_with("how_many"))) %>% 
+  rowwise() %>% 
+  mutate(total_participants = sum(across(2:6), na.rm = TRUE), .keep = "unused") %>% 
+  ungroup() %>% 
+  filter(!is.na(delivery_library_names)) %>% 
+  group_by(delivery_library_names) %>% 
+  summarise(sessions = n(), total_participants = sum(total_participants), total_duration = round(sum(duration)/60))
+
+ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
+  geom_point(aes(size=total_duration)) +
+  geom_text(label=sessions_participants$delivery_library_names, vjust = -1, hjust = 0) +
+  geom_vline(xintercept = 10) + geom_hline(yintercept = 125)
 
 #Only 1 of the online events during lockdown was a pre-school activity. Some pre-recorded so not recorded here (Libraries FB)
 online_sessions %>%
   filter(id == "3674")
+
+
+# External delivery -------------------------------------------------------
 
 online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
@@ -83,3 +126,33 @@ online_sessions %>%
   ) %>% 
   pivot_longer(5:7, names_to = "delivery_agent_type") %>% 
   count(delivery_agent_type, value)
+
+waffle(
+  parts = c("Non-staff involvement" = 39,"Staff delivered" = 61), 
+  colors = c("red", "grey"),
+  title = "<span style='color:red'><strong>Individuals not employed by Auckland Council</strong></span> were involved<br>in delivering <strong>39%</strong> of the 128 online activities during lockdown",
+  xlab = "1 square = 1% of activities delivered during lockdown"
+  ) +
+  theme(plot.title = element_markdown(lineheight = 1.1))
+
+
+# Bi-lingual --------------------------------------------------------------
+
+online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>%
+  distinct(id, realm_language) %>% 
+  pivot_wider(names_from = realm_language, values_from = realm_language) %>% 
+  clean_names() %>% 
+  mutate(bi_lingual = case_when(
+    is.na(other) & is.na(mandarin_chinese) & is.na(te_reo_maori) ~ FALSE,
+    TRUE ~ TRUE
+  )) %>% 
+  count(bi_lingual)
+
+waffle(
+  parts = c("Bi-lingual" = 44,"Not bi-lingual" = 56), 
+  colors = c("red", "grey"),
+  title = "<strong>44%</strong> of the 128 online activities delivered during<br>lockdown were <span style='color:red'><strong>bi-lingual sessions</strong></span> ",
+  xlab = "1 square = 1% of activities delivered during lockdown"
+) +
+  theme(plot.title = element_markdown(lineheight = 1.1))
