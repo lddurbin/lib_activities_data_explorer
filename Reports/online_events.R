@@ -59,6 +59,17 @@ ggplot(mapping = aes(x = data$date, y = data$sessions)) +
 # Sessions per team -------------------------------------------------------
 
 # 94 sessions after 17 August where CC staff were involved in delivery (only 1 where more than one team collaborated).
+staff_delivered <- online_sessions %>%
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  mutate(delivery_library_names = case_when(
+    is.na(delivery_library_names) & !is.na(unit_3_teams) ~ unit_3_teams,
+    TRUE ~ delivery_library_names
+  )) %>% 
+  distinct(id, delivery_library_names) %>%
+  filter(!is.na(delivery_library_names)) %>%
+  distinct(id) %>%
+  nrow()
+
 lockdown_delivery_teams <- online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   mutate(delivery_library_names = case_when(
@@ -81,7 +92,7 @@ ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names,
   scale_fill_manual(values = c("grey", "red")) +
   geom_text(aes(label = lockdown_delivery_teams$n),  hjust = -0.3, colour = "black") +
   labs(
-    title = paste0("Libraries staff have delivered ", total_sessions, " online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>"),
+    title = paste0("Libraries staff have delivered ", staff_delivered, " online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>"),
     subtitle = "Number of online sessions recorded via the Programmes and Events\nform that were delivered after 17 August 2021, and in which Connected\nCommunities staff were involved in delivery"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
@@ -235,7 +246,39 @@ online_sessions %>%
   theme(panel.grid.major = element_blank(), axis.text.x = element_blank(), legend.position = "none", axis.text.y = element_text(size = 12)) +
   geom_text(aes(label = n),  hjust = -0.3, colour = "black", size = 5) +
   labs(
-    title = paste0("Libraries staff have delivered ", total_sessions, " online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>"),
-    subtitle = "Number of online sessions recorded via the Programmes and Events\nform that were delivered after 17 August 2021, and in which Connected\nCommunities staff were involved in delivery"
+    title = "During lockdown, classes and workshops were the\nmost frequently delivered type of activity"
+  )
+
+sessions_participants_formats <- online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  distinct(id, across(ends_with("online_broadcast_of_this_session")), format = what_was_the_format_of_the_session) %>% 
+  rowwise() %>% 
+  mutate(total_participants = sum(across(2:4), na.rm = TRUE), .keep = "unused") %>% 
+  ungroup() %>% 
+  group_by(format) %>% 
+  summarise(sessions = n(), participants_per_format = sum(total_participants)) %>% 
+  mutate(color = case_when(
+    format == "Talk" ~ "red",
+    format %in% c("Club", "Class or workshop") ~ "blue",
+    TRUE ~ "black"
+  )) %>% 
+  filter(format != "Pre-school activity")
+
+ggplot(sessions_participants_formats, aes(x=sessions, y=participants_per_format)) +
+  geom_point(size=3, color = sessions_participants_formats$color) +
+  geom_text(label=sessions_participants_formats$format, vjust = -1.5, hjust = 0, color = sessions_participants_formats$color) +
+  geom_vline(xintercept = max(sessions_participants_formats$sessions)/2, color = "blue") +
+  geom_hline(yintercept = max(sessions_participants_formats$participants_per_format)/2, color = "blue") +
+  annotate("label", x = 10, y = 60, label = "Fewer sessions, fewer participants", fill = "white") +
+  annotate("label", x = 35, y = 60, label = "More sessions, fewer participants", fill = "white") +
+  annotate("label", x = 10, y = 400, label = "Fewer sessions, more participants", fill = "white") +
+  annotate("label", x = 35, y = 400, label = "More sessions, more participants", fill = "white") +
+  scale_x_continuous(limits = c(0,55)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(axis.title = element_text(size = 14)) +
+  labs(
+    title = "Whilst the few <span style='color:red'>talks</span> delivered during lockdown were viewed<br>by many people, fewer people were reached across the<br>many more <span style='color:blue'>clubs and classes/workshops</span> that were delivered",
+    y = "Participants",
+    x = "Sessions"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
