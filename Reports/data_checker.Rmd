@@ -47,13 +47,15 @@ base_table_for_checker <- base_table_for_checker %>%
   )
 
 delivery_agents <- delivery_agents %>% 
-  rowwise() %>% 
-  mutate(delivery_library_names = case_when(
-    is.na(delivery_library_names) ~ "Other AC staff or external",
-    !is.na(delivery_library_names) ~ delivery_library_names
+  select(id, delivery_library_names, unit_3_teams) %>% 
+  pivot_longer(2:3) %>% 
+  mutate(value = case_when(
+    is.na(value) & name == "delivery_library_names" ~ "Other AC staff or external",
+    !str_detect(value, "Research|Special") & name == "unit_3_teams" ~ NA_character_,
+    TRUE ~ value
   )) %>% 
-  ungroup() %>% 
-  select(id, delivery_library_names)
+  select(id, delivery_library_names = value) %>% 
+  filter(!is.na(delivery_library_names))
 
 checker_data <- left_join(base_table_for_checker, delivery_agents, by = "id") %>% 
   rowwise() %>% 
