@@ -55,7 +55,8 @@ delivery_agents <- delivery_agents %>%
     TRUE ~ value
   )) %>% 
   select(id, delivery_library_names = value) %>% 
-  filter(!is.na(delivery_library_names))
+  filter(!is.na(delivery_library_names)) %>% 
+  distinct(id, delivery_library_names)
 
 checker_data <- left_join(base_table_for_checker, delivery_agents, by = "id") %>% 
   rowwise() %>% 
