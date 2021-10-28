@@ -175,6 +175,15 @@ external_providers <- online_sessions %>%
   distinct(id, session_name = what_was_the_name_of_the_session, external_agent_names) %>% 
   filter(!is.na(external_agent_names))
 
+# On average, are there more participants at sessions involving externals than not?
+online_sessions %>% 
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  distinct(id, across(starts_with("how_many_")), external_agents, session_name = what_was_the_name_of_the_session, external_agent_names) %>% 
+  rowwise() %>% 
+  mutate(total_participants = sum(across(2:6), na.rm = TRUE), .keep = "unused") %>% 
+  ungroup() %>% 
+  with_groups(external_agents, summarise, avg_participants = round(mean(total_participants)))
+
 # Bi-lingual --------------------------------------------------------------
 
 online_sessions %>% 
