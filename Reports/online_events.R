@@ -92,7 +92,7 @@ ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names,
   scale_fill_manual(values = c("grey", "red")) +
   geom_text(aes(label = lockdown_delivery_teams$n),  hjust = -0.3, colour = "black") +
   labs(
-    title = paste0("Libraries staff have delivered ", staff_delivered, " online activities<br>during lockdown. Nearly 80% of these<br>sessions were delivered by just <span style='color:red'>six teams</span>"),
+    title = paste0("Libraries staff have delivered ", staff_delivered, " online activities<br>during lockdown. About two thirds of these<br>sessions were delivered by just <span style='color:red'>six teams</span>"),
     subtitle = "Number of online sessions recorded via the Programmes and Events\nform that were delivered after 17 August 2021, and in which Connected\nCommunities staff were involved in delivery"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
@@ -115,7 +115,7 @@ sessions_participants <- online_sessions %>%
   mutate(max_participants = max(total_participants), max_sessions = max(sessions)) %>% 
   mutate(
     alpha = case_when(
-      sessions > 5 | total_participants > 24 ~ 1,
+      sessions >= 5 | total_participants > 50 ~ 1,
       TRUE ~ 0
     ),
     color = case_when(
@@ -173,9 +173,9 @@ online_sessions %>%
   count(delivery_agent_type, value)
 
 waffle(
-  parts = c("Non-staff involvement" = 39,"Staff delivered" = 61), 
+  parts = c("Non-staff involvement" = 41,"Staff delivered" = 59), 
   colors = c("red", "grey"),
-  title = paste0("<span style='color:red'><strong>Individuals not employed by Auckland Council</strong></span> were involved<br>in delivering <strong>39%</strong> of the ", total_sessions, " online activities during lockdown"),
+  title = paste0("<span style='color:red'><strong>Individuals not employed by Auckland Council</strong></span> were involved<br>in delivering <strong>41%</strong> of the ", total_sessions, " online activities during lockdown"),
   xlab = "1 square = 1% of activities delivered during lockdown"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
@@ -209,9 +209,9 @@ online_sessions %>%
   count(bi_lingual)
 
 waffle(
-  parts = c("Bi-lingual" = 44,"Not bi-lingual" = 56), 
+  parts = c("Bi-lingual" = 38,"Not bi-lingual" = 62), 
   colors = c("red", "grey"),
-  title = paste0("<strong>44%</strong> of the ", total_sessions, " online activities delivered during lockdown<br>were <span style='color:red'><strong>bi-lingual sessions</strong></span>"),
+  title = paste0("<strong>38%</strong> of the ", total_sessions, " online activities delivered during lockdown<br>were <span style='color:red'><strong>bi-lingual sessions</strong></span>"),
   xlab = "1 square = 1% of activities delivered during lockdown"
 ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
@@ -222,12 +222,12 @@ online_sessions %>%
   filter(!is.na(realm_language)) %>% 
   count(realm_language) %>% 
   adorn_percentages(denominator = "col") %>% 
-  mutate(realm_language = paste0(realm_language, " (", n*100, "%)")) %>% 
+  mutate(realm_language = paste0(realm_language, " (", round(n*100), "%)")) %>% 
   treemap::treemap(
     index = "realm_language",
     vSize = "n",
     type = "index",
-    title = "Half of the 56 bi-lingual sessions delivered during this lockdown were in Te reo Māori",
+    title = "Nearly falf of the 65 bi-lingual sessions delivered during this lockdown were in Te reo Māori",
     fontsize.title = 16,
     aspRatio = 1.5
     )
