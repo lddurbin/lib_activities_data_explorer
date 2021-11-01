@@ -7,40 +7,73 @@ online_sessions <- readRDS(here::here("data/joined_data.rds")) %>%
 # Number of sessions since 18 August 2021
 total_sessions <- online_sessions %>% 
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
-  distinct(id) %>% 
+  distinct(id, floor_date(as.Date(delivery_datetime), "months")) %>% 
   nrow()
 
-# Total participants since 18 August 2021
-total_participants <- online_sessions %>% 
-  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
-  distinct(id, across(ends_with("online_broadcast_of_this_session"))) %>% 
+# Number of sessions per month since 1 July 2021
+monthly_sessions <- online_sessions %>% 
+  filter(as.Date(delivery_datetime) < ymd("2021-11-01")) %>% 
+  distinct(id, month = floor_date(as.Date(delivery_datetime), "months")) %>% 
+  with_groups(month, summarise, online_sessions = n())
+
+monthly_sessions %>% 
+ggplot(aes(x = month, y = online_sessions)) +
+  geom_col(fill = "blue") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(size = 12)) +
+  geom_text(aes(label = scales::comma(online_sessions, accuracy = 1)), vjust = -1, size = 5) +
+  labs(
+    title = "Number of online sessions per month recorded via the\nLibraries Programmes and Events form"
+  )
+
+# Number of participants per month across online sessions recorded since 1 July 2021
+monthly_participants <- online_sessions %>% 
+  filter(as.Date(delivery_datetime) < ymd("2021-11-01")) %>% 
+  distinct(id, delivery_datetime, across(ends_with("online_broadcast_of_this_session"))) %>% 
   rowwise() %>% 
-  mutate(total_participants = sum(across(2:4), na.rm = TRUE), .keep = "unused") %>% 
+  mutate(total_participants = sum(across(2:4), na.rm = TRUE), month = floor_date(as.Date(delivery_datetime), "months"), .keep = "unused") %>% 
   ungroup() %>% 
-  adorn_totals() %>% 
-  tail(1) %>% 
-  pull(total_participants)
+  with_groups(month, summarise, participants_per_month = sum(total_participants))
 
-# Total number of hours of programming since 18 August 2021
-total_duration <- online_sessions %>% 
-  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
-  distinct(id, what_was_the_duration_of_the_session_to_the_nearest_half_an_hour) %>% 
-  adorn_totals() %>% 
-  tail(1) %>% 
-  mutate(duration_hours = round(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour/60)) %>% 
-  pull(duration_hours)
+monthly_participants %>% 
+  ggplot(aes(x = month, y = participants_per_month)) +
+  geom_col(fill = "blue") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(size = 12)) +
+  geom_text(aes(label = scales::comma(participants_per_month, accuracy = 1)), vjust = -1, size = 5) +
+  labs(
+    title = "Number of participants per month across online sessions\nrecorded via the Libraries Programmes and Events form"
+  )
 
-data <- online_sessions %>%
-  filter(as.Date(delivery_datetime) <= floor_date(today(), "weeks")) %>% 
-  distinct(id, .keep_all = TRUE) %>%
-  mutate(date = as.Date(delivery_datetime) %>% floor_date(unit = "week", week_start = 1)) %>% 
-  count(date, name = "sessions")
+
+# Total number of hours of programming per month delivered across online sessions since July 1
+monthly_duration <- online_sessions %>% 
+  filter(as.Date(delivery_datetime) < ymd("2021-11-01")) %>% 
+  distinct(id, month = floor_date(as.Date(delivery_datetime), "months"), what_was_the_duration_of_the_session_to_the_nearest_half_an_hour) %>% 
+  with_groups(month, summarise, duration_per_month = sum(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour)) %>% 
+  mutate(monthly_duration_hours = round(duration_per_month/60), .keep = "unused")
+
+monthly_duration %>% 
+  ggplot(aes(x = month, y = monthly_duration_hours)) +
+  geom_col(fill = "blue") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(size = 12)) +
+  geom_text(aes(label = scales::comma(monthly_duration_hours, accuracy = 1)), vjust = -1, size = 5) +
+  labs(
+    title = "Number of hours of delivery across online sessions\nrecorded via the Libraries Programmes and Events form"
+  )
 
 
 # Sessions over time ------------------------------------------------------
 
 level_four <- interval(ymd("2021-08-17"), ymd("2021-09-21"))
 level_three <- interval(ymd("2021-09-21"), today())
+
+data <- online_sessions %>%
+  filter(as.Date(delivery_datetime) <= floor_date(today(), "weeks")) %>% 
+  distinct(id, .keep_all = TRUE) %>%
+  mutate(date = as.Date(delivery_datetime) %>% floor_date(unit = "week", week_start = 1)) %>% 
+  count(date, name = "sessions")
 
 ggplot(mapping = aes(x = data$date, y = data$sessions)) +
   annotate("rect", xmin = as.Date(int_start(level_four)), xmax = as.Date(int_end(level_four)), ymin = 0, ymax = max(data$sessions), fill = "#a93226", alpha = .3) +
