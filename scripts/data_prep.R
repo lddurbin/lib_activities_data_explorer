@@ -69,3 +69,5 @@ source(here::here("scripts/delivery_agents.R"))
 # Join all the tables into a single tibble
 joined_data <- plyr::join_all(list(base_table, outcomes, age_groups, delivery_agents, realm_languages, target_groups), "id") %>% 
   as_tibble()
+
+saveRDS(joined_data, here::here("data/joined_data.rds"))
