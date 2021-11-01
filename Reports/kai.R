@@ -8,4 +8,4 @@ kai_sessions <- readRDS(here::here("data/joined_data.rds")) %>%
   ungroup() %>% 
   filter(str_detect(str_to_lower(name), kai) | str_detect(str_to_lower(comments), kai))
 
-# write_csv(kai_sessions, here::here("Reports/kai.csv"))
+# write_excel_csv(kai_sessions, here::here("Reports/kai.csv"))
