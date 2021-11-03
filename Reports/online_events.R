@@ -88,7 +88,7 @@ ggplot(mapping = aes(x = data$date, y = data$sessions)) +
   scale_x_date(date_labels = "%B", breaks = "1 month", limits = c(ymd("2021-06-28"), today())) +
   scale_y_continuous(breaks = c(5,10,15,20,25)) +
   labs(
-    title = "More online programmes, events, and Book a Librarian sessions<br>were delivered during <span style='color:#a93226'>Alert Level 4</span> than previously, but the<br>activity has fallen back somewhat during <span style='color:#ff9f33'>Alert Level 3</span>",
+    title = "The number of online programmes, events, and Book a<br>Librarian sessions increased substantially during <span style='color:#a93226'>Alert<br>Level 4</span>, but some momentum has been lost during <span style='color:#ff9f33'>Alert Level 3</span>",
     caption = "Number of online sessions per week recorded via the Programmes and Events form since 1 July 2021"
     ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
