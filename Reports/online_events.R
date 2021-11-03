@@ -96,7 +96,6 @@ ggplot(mapping = aes(x = data$date, y = data$sessions)) +
 
 # Sessions per team -------------------------------------------------------
 
-# 94 sessions after 17 August where CC staff were involved in delivery (only 1 where more than one team collaborated).
 staff_delivered <- online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   mutate(delivery_library_names = case_when(
@@ -137,7 +136,7 @@ ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names,
 
 # Sessions vs participants per team -------------------------------------------------------
 
-sessions_participants <- online_sessions %>%
+stats_per_library <- online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   mutate(delivery_library_names = case_when(
     is.na(delivery_library_names) & !is.na(unit_3_teams) ~ unit_3_teams,
@@ -150,7 +149,9 @@ sessions_participants <- online_sessions %>%
   filter(!is.na(delivery_library_names)) %>% 
   group_by(delivery_library_names) %>% 
   summarise(sessions = n(), total_participants = sum(total_participants), total_duration = round(sum(duration)/60)) %>% 
-  mutate(max_participants = max(total_participants), max_sessions = max(sessions), delivery_library_names = str_remove_all(delivery_library_names, " Library| Community Hub")) %>% 
+  mutate(max_participants = max(total_participants), max_sessions = max(sessions), max_duration = max(total_duration), delivery_library_names = str_remove_all(delivery_library_names, " Library| Community Hub"))
+
+sessions_participants <- stats_per_library %>% 
   mutate(
     alpha = case_when(
       sessions >= 5 | total_participants > 44 ~ 1,
@@ -182,6 +183,38 @@ ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
     x = "Sessions"
     ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
+
+sessions_duration <- stats_per_library %>% 
+  mutate(
+    alpha = case_when(
+      sessions >= 7 | total_duration > 10 ~ 1,
+      TRUE ~ 0
+    ),
+    color = case_when(
+      sessions < max_sessions/2 & total_duration > max_duration/2 ~ "red",
+      sessions > max_sessions/2 & total_duration < max_duration/2 ~ "blue",
+      TRUE ~ "black"
+    )
+  )
+
+ggplot(sessions_duration, aes(x=sessions, y=total_duration)) +
+  geom_point(size=3, color=sessions_duration$color) +
+  geom_text(label=sessions_duration$delivery_library_names, vjust = -1, hjust = 0, color = sessions_duration$color, alpha = sessions_duration$alpha) +
+  geom_vline(xintercept = max(sessions_duration$sessions)/2, color = "blue") +
+  geom_hline(yintercept = max(sessions_duration$total_duration)/2, color = "blue") +
+  annotate("label", x = 5, y = 12, label = "Fewer sessions, less time spent delivering", fill = "white") +
+  annotate("label", x = 18, y =12, label = "More sessions, less time spent delivering", fill = "white") +
+  annotate("label", x = 5, y = 25, label = "Fewer sessions, more time spent delivering", fill = "white") +
+  annotate("label", x = 18, y = 25, label = "More sessions, more time spent delivering", fill = "white") +
+  scale_x_continuous(limits = c(0,26), breaks = seq(0, 26, by = 3)) +
+  scale_y_continuous(limits = c(-2,40)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(axis.title = element_text(size = 14)) +
+  labs(
+    title = "On the whole, the relationship between sessions delivered and hours of delivery is\nas you'd expect: the more sessions delivered, the more hours spent delierving them",
+    y = "Hours of Delivery",
+    x = "Sessions"
+  )
 
 #Only a few of the online events during lockdown were pre-school activities. Some pre-recorded so not recorded here (Libraries FB)
 online_sessions %>%
