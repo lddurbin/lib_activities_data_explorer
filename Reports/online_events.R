@@ -2,7 +2,11 @@ library(ggtext)
 library(waffle)
 
 online_sessions <- readRDS(here::here("data/joined_data.rds")) %>% 
-  filter(online == TRUE)
+  filter(online == TRUE) %>% 
+filter(id != "3758") # THIS IS A PRE-RECORDED VIDEO POSTED TO TAKAPUNA LIBRARY'S FACEBOOK PAGE
+
+
+# Monthly Totals ----------------------------------------------------------
 
 # Number of sessions since 18 August 2021
 total_sessions <- online_sessions %>% 
@@ -173,7 +177,7 @@ ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
   ggthemes::theme_fivethirtyeight() +
   theme(axis.title = element_text(size = 14)) +
   labs(
-    title = "Whilst the Research Central team have delivered to <span style='color:red'>lots of<br>participants across relatively few sessions</span>, other teams<br>have delivered <span style='color:blue'>many more sessions to fewer participants</span>",
+    title = "Whilst the Research Central team have delivered to <span style='color:red'>lots of<br>participants across relatively few sessions</span>, other teams<br>have delivered <span style='color:blue'>more sessions to fewer participants</span>",
     y = "Participants",
     x = "Sessions"
     ) +
@@ -188,30 +192,38 @@ online_sessions %>%
 
 # External delivery -------------------------------------------------------
 
-online_sessions %>%
+delivery_agent_mix <- online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
   distinct(across(c(1, 32:34))) %>% 
   mutate(
-    staff = case_when(
-      CC_staff_agents | non_CC_staff_agents ~ TRUE,
-      TRUE ~ FALSE
-    ),
-    staff_and_externals = case_when(
-      staff & external_agents ~ TRUE,
+    staff_only = case_when(
+      (CC_staff_agents | non_CC_staff_agents) & !external_agents ~ TRUE,
       TRUE ~ FALSE
     ),
     externals_only = case_when(
-      !staff & external_agents ~ TRUE,
+      !CC_staff_agents & !non_CC_staff_agents ~ TRUE,
+      TRUE ~ FALSE
+    ),
+    staff_and_externals = case_when(
+      external_agents & !externals_only ~ TRUE,
       TRUE ~ FALSE
     )
   ) %>% 
   pivot_longer(5:7, names_to = "delivery_agent_type") %>% 
-  count(delivery_agent_type, value)
+  count(delivery_agent_type, value) %>% 
+  filter(value) %>% 
+  adorn_percentages(denominator = "col") %>% 
+  mutate(n = round(n*100), delivery_agent_type = case_when(
+    delivery_agent_type == "staff_only" ~ "Staff-only delivery",
+    delivery_agent_type == "externals_only" ~ "External-only delivery",
+    delivery_agent_type == "staff_and_externals" ~ "Staff and external co-delivery"
+  )) %>% 
+  pull(var = n, name = delivery_agent_type)
 
 waffle(
-  parts = c("Non-staff involvement" = 41,"Entirely staff delivered" = 59), 
-  colors = c("red", "grey"),
-  title = paste0("<span style='color:red'><strong>Individuals not employed by Auckland Council</strong></span> were involved<br>in delivering <strong>41%</strong> of the ", total_sessions, " online activities during lockdown"),
+  parts = delivery_agent_mix, 
+  colors = c("#066CE6", "#a0cbff", "grey"),
+  title = paste0("<strong>", delivery_agent_mix['External-only delivery'], "%</strong> of the ", total_sessions, " online activities delivered during lockdown were<br><span style='color:#066CE6'><strong>conducted without any staff involvement</span>. A further <strong>", delivery_agent_mix['Staff and external co-delivery'], "%</strong><br>were <span style='color:#a0cbff'><strong>delivered jointly by staff and external delivery agents</span>"),
   xlab = "1 square = 1% of activities delivered during lockdown"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
