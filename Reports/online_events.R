@@ -1,5 +1,9 @@
-library(ggtext)
-library(waffle)
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2, warn.conflicts = FALSE)
+library(ggtext, warn.conflicts = FALSE)
+library(waffle, warn.conflicts = FALSE)
+library(lubridate, warn.conflicts = FALSE)
+library(stringr, warn.conflicts = FALSE)
 
 online_sessions <- readRDS(here::here("data/joined_data.rds")) %>% 
   filter(online == TRUE) %>% 
@@ -242,10 +246,10 @@ delivery_agent_mix <- online_sessions %>%
       TRUE ~ FALSE
     )
   ) %>% 
-  pivot_longer(5:7, names_to = "delivery_agent_type") %>% 
+  tidyr::pivot_longer(5:7, names_to = "delivery_agent_type") %>% 
   count(delivery_agent_type, value) %>% 
   filter(value) %>% 
-  adorn_percentages(denominator = "col") %>% 
+  janitor::adorn_percentages(denominator = "col") %>% 
   mutate(n = round(n*100), delivery_agent_type = case_when(
     delivery_agent_type == "staff_only" ~ "Staff-only delivery",
     delivery_agent_type == "externals_only" ~ "External-only delivery",
@@ -282,7 +286,7 @@ online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>%
   distinct(id, realm_language) %>% 
   pivot_wider(names_from = realm_language, values_from = realm_language) %>% 
-  clean_names() %>% 
+  janitor::clean_names() %>% 
   mutate(bi_lingual = case_when(
     is.na(other) & is.na(mandarin_chinese) & is.na(te_reo_maori) ~ FALSE,
     TRUE ~ TRUE
@@ -302,7 +306,7 @@ online_sessions %>%
   distinct(id, realm_language) %>% 
   filter(!is.na(realm_language)) %>% 
   count(realm_language) %>% 
-  adorn_percentages(denominator = "col") %>% 
+  janitor::adorn_percentages(denominator = "col") %>% 
   mutate(realm_language = paste0(realm_language, " (", round(n*100), "%)")) %>% 
   treemap::treemap(
     index = "realm_language",
