@@ -24,7 +24,7 @@ monthly_sessions <- online_sessions %>%
   distinct(id, month = floor_date(as.Date(delivery_datetime), "months")) %>% 
   with_groups(month, summarise, online_sessions = n())
 
-monthly_sessions %>% 
+monthly_sessions_plot <- monthly_sessions %>% 
 ggplot(aes(x = month, y = online_sessions)) +
   geom_col(fill = "blue") +
   ggthemes::theme_fivethirtyeight() +
@@ -33,6 +33,8 @@ ggplot(aes(x = month, y = online_sessions)) +
   labs(
     title = "Number of online sessions per month recorded via the\nLibraries Programmes and Events form"
   )
+
+ggsave("online_sessions_per_month.png", plot = monthly_sessions_plot, path = here::here("plots/online_lockdown"))
 
 # Number of participants per month across online sessions recorded since 1 July 2021
 monthly_participants <- online_sessions %>% 
@@ -43,7 +45,7 @@ monthly_participants <- online_sessions %>%
   ungroup() %>% 
   with_groups(month, summarise, participants_per_month = sum(total_participants))
 
-monthly_participants %>% 
+monthly_participants_plot <- monthly_participants %>% 
   ggplot(aes(x = month, y = participants_per_month)) +
   geom_col(fill = "blue") +
   ggthemes::theme_fivethirtyeight() +
@@ -53,6 +55,7 @@ monthly_participants %>%
     title = "Number of participants per month across online sessions\nrecorded via the Libraries Programmes and Events form"
   )
 
+ggsave("online_participants_per_month.png", plot = monthly_participants_plot, path = here::here("plots/online_lockdown"))
 
 # Total number of hours of programming per month delivered across online sessions since July 1
 monthly_duration <- online_sessions %>% 
@@ -61,7 +64,7 @@ monthly_duration <- online_sessions %>%
   with_groups(month, summarise, duration_per_month = sum(what_was_the_duration_of_the_session_to_the_nearest_half_an_hour)) %>% 
   mutate(monthly_duration_hours = round(duration_per_month/60), .keep = "unused")
 
-monthly_duration %>% 
+monthly_duration_plot <- monthly_duration %>% 
   ggplot(aes(x = month, y = monthly_duration_hours)) +
   geom_col(fill = "blue") +
   ggthemes::theme_fivethirtyeight() +
@@ -71,6 +74,7 @@ monthly_duration %>%
     title = "Number of hours of delivery across online sessions\nrecorded via the Libraries Programmes and Events form"
   )
 
+ggsave("online_duration_per_month.png", plot = monthly_duration_plot, path = here::here("plots/online_lockdown"))
 
 # Sessions over time ------------------------------------------------------
 
@@ -83,7 +87,7 @@ data <- online_sessions %>%
   mutate(date = as.Date(delivery_datetime) %>% floor_date(unit = "week", week_start = 1)) %>% 
   count(date, name = "sessions")
 
-ggplot(mapping = aes(x = data$date, y = data$sessions)) +
+sessions_volumes <- ggplot(mapping = aes(x = data$date, y = data$sessions)) +
   annotate("rect", xmin = as.Date(int_start(level_four)), xmax = as.Date(int_end(level_four)), ymin = 0, ymax = max(data$sessions), fill = "#a93226", alpha = .3) +
   annotate("rect", xmin = as.Date(int_start(level_three)), xmax = as.Date(int_end(level_three)), ymin = 0, ymax = max(data$sessions), fill = "#ff9f33", alpha = .3) +
   geom_line(size = 1.5, color = "blue") +
@@ -96,6 +100,8 @@ ggplot(mapping = aes(x = data$date, y = data$sessions)) +
     caption = "Number of online sessions per week recorded via the Programmes and Events form since 1 July 2021"
     ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
+
+ggsave("sessions_volumes.png", plot = sessions_volumes, path = here::here("plots/online_lockdown"))
 
 
 # Sessions per team -------------------------------------------------------
@@ -125,7 +131,11 @@ lockdown_delivery_teams <- online_sessions %>%
     TRUE ~ FALSE
   ))
 
-ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names, lockdown_delivery_teams$n), y = lockdown_delivery_teams$n, fill = lockdown_delivery_teams$highlight)) +
+lockdown_delivery_teams_plot <- ggplot(mapping = aes(
+  x = reorder(lockdown_delivery_teams$delivery_library_names, lockdown_delivery_teams$n),
+  y = lockdown_delivery_teams$n,
+  fill = lockdown_delivery_teams$highlight
+  )) +
   geom_col() +
   coord_flip() +
   ggthemes::theme_fivethirtyeight() +
@@ -137,6 +147,8 @@ ggplot(mapping = aes(x = reorder(lockdown_delivery_teams$delivery_library_names,
     caption = "Number of online sessions recorded via the Programmes and Events form that were delivered\nafter 17 August 2021, and in which Connected Communities staff were involved in delivery"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
+
+ggsave("sessions_per_team.png", plot = lockdown_delivery_teams_plot, path = here::here("plots/online_lockdown"))
 
 # Sessions vs participants per team -------------------------------------------------------
 
@@ -169,7 +181,7 @@ sessions_participants <- stats_per_library %>%
   )
 
 # Research Central had one particularly popular event with 130 participants: https://www.eventfinda.co.nz/2021/the-memories-in-time-project-with-fiona-brooker/auckland
-ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
+sessions_participants_plot <- ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
   geom_point(size=3, color=sessions_participants$color) +
   geom_text(label=sessions_participants$delivery_library_names, vjust = -1, hjust = 0, color = sessions_participants$color, alpha = sessions_participants$alpha) +
   geom_vline(xintercept = max(sessions_participants$sessions)/2, color = "blue") +
@@ -188,6 +200,8 @@ ggplot(sessions_participants, aes(x=sessions, y=total_participants)) +
     ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
 
+ggsave("sessions_participants_scatterplot.png", plot = sessions_participants_plot, path = here::here("plots/online_lockdown"))
+
 sessions_duration <- stats_per_library %>% 
   mutate(
     alpha = case_when(
@@ -201,13 +215,13 @@ sessions_duration <- stats_per_library %>%
     )
   )
 
-ggplot(sessions_duration, aes(x=sessions, y=total_duration)) +
+sessions_duration_plot <- ggplot(sessions_duration, aes(x=sessions, y=total_duration)) +
   geom_point(size=3, color=sessions_duration$color) +
   geom_text(label=sessions_duration$delivery_library_names, vjust = -1, hjust = 0, color = sessions_duration$color, alpha = sessions_duration$alpha) +
   geom_vline(xintercept = max(sessions_duration$sessions)/2, color = "blue") +
   geom_hline(yintercept = max(sessions_duration$total_duration)/2, color = "blue") +
-  annotate("label", x = 5, y = 12, label = "Fewer sessions, less time spent delivering", fill = "white") +
-  annotate("label", x = 18, y =12, label = "More sessions, less time spent delivering", fill = "white") +
+  annotate("label", x = 5, y = 10, label = "Fewer sessions, less time spent delivering", fill = "white") +
+  annotate("label", x = 18, y =10, label = "More sessions, less time spent delivering", fill = "white") +
   annotate("label", x = 5, y = 25, label = "Fewer sessions, more time spent delivering", fill = "white") +
   annotate("label", x = 18, y = 25, label = "More sessions, more time spent delivering", fill = "white") +
   scale_x_continuous(limits = c(0,26), breaks = seq(0, 26, by = 3)) +
@@ -220,12 +234,33 @@ ggplot(sessions_duration, aes(x=sessions, y=total_duration)) +
     x = "Sessions"
   )
 
-#Only a few of the online events during lockdown were pre-school activities. Some pre-recorded so not recorded here (Libraries FB)
-online_sessions %>%
-  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>%
-  filter(str_detect(age_group, "Pre-school")) %>% 
-  distinct(id, .keep_all = TRUE)
+ggsave("sessions_duration_scatterplot.png", plot = sessions_duration_plot, path = here::here("plots/online_lockdown"))
 
+
+# Age Groups --------------------------------------------------------------
+
+age_groups <- online_sessions %>%
+  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
+  count(id, age_group) %>% 
+  count(age_group, name = "sessions") %>% 
+  mutate(age_group = case_when(
+    is.na(age_group) ~ "Designed for all ages",
+    TRUE ~ age_group
+  )) %>% 
+  mutate(age_group = factor(age_group, levels = c("Designed for all ages", "Seniors (65+)", "Adults (25-64)", "Youths (13-24)", "Primary school children (5-12)", "Pre-school children (under 5 years)")))
+
+age_groups_plot <- age_groups %>%
+  ggplot(aes(x = forcats::fct_rev(age_group), y = sessions)) +
+  geom_col(fill = "blue") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(), axis.text.x = element_blank(), axis.text.y = element_text(size = 12), plot.title.position = "plot") +
+  geom_text(aes(label = scales::comma(sessions, accuracy = 1)), hjust = 1.5, size = 5, colour = "white") +
+  coord_flip() +
+  labs(
+    title = "How many online sessions delivered during lockdown were\ndesigned for each age group?"
+  )
+
+ggsave("age_groups.png", plot = age_groups_plot, path = here::here("plots/online_lockdown"))
 
 # External delivery -------------------------------------------------------
 
@@ -257,7 +292,7 @@ delivery_agent_mix <- online_sessions %>%
   )) %>% 
   pull(var = n, name = delivery_agent_type)
 
-waffle(
+delivery_agent_mix_plot <- waffle(
   parts = delivery_agent_mix, 
   colors = c("#066CE6", "#a0cbff", "grey"),
   title = paste0("<strong>", delivery_agent_mix['External-only delivery'], "%</strong> of the ", total_sessions, " online activities delivered during lockdown were<br><span style='color:#066CE6'><strong>conducted without any staff involvement</span>. A further <strong>", delivery_agent_mix['Staff and external co-delivery'], "%</strong><br>were <span style='color:#a0cbff'><strong>delivered jointly by staff and external delivery agents</span>"),
@@ -265,41 +300,45 @@ waffle(
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
 
+ggsave("external_delivery_waffle.png", plot = delivery_agent_mix_plot, path = here::here("plots/online_lockdown"), bg = "white")
+
 # Who were the external providers?
 external_providers <- online_sessions %>% 
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
-  distinct(id, session_name = what_was_the_name_of_the_session, external_agent_names) %>% 
-  filter(!is.na(external_agent_names))
-
-# On average, are there more participants at sessions involving externals than not?
-online_sessions %>% 
-  filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
-  distinct(id, across(starts_with("how_many_")), external_agents, session_name = what_was_the_name_of_the_session, external_agent_names) %>% 
+  distinct(id, delivery_datetime, session_name = what_was_the_name_of_the_session, external_agent_names, across(ends_with("online_broadcast_of_this_session"))) %>% 
   rowwise() %>% 
-  mutate(total_participants = sum(across(2:6), na.rm = TRUE), .keep = "unused") %>% 
+  mutate(total_participants = sum(across(2:4), na.rm = TRUE), .keep = "unused") %>% 
   ungroup() %>% 
-  with_groups(external_agents, summarise, avg_participants = round(mean(total_participants)))
+  filter(!is.na(external_agent_names))
 
 # Bi-lingual --------------------------------------------------------------
 
-online_sessions %>% 
+bi_lingual <- online_sessions %>% 
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>%
   distinct(id, realm_language) %>% 
   pivot_wider(names_from = realm_language, values_from = realm_language) %>% 
   janitor::clean_names() %>% 
   mutate(bi_lingual = case_when(
-    is.na(other) & is.na(mandarin_chinese) & is.na(te_reo_maori) ~ FALSE,
-    TRUE ~ TRUE
+    is.na(other) & is.na(mandarin_chinese) & is.na(te_reo_maori) ~ "Not bi-lingual",
+    !is.na(te_reo_maori) ~ "Te Reo Māori",
+    TRUE ~ "Bi-lingual other"
   )) %>% 
-  count(bi_lingual)
+  count(bi_lingual) %>% 
+  adorn_percentages(denominator = "col") %>% 
+  as_tibble() %>% 
+  mutate(n = round(n*100)) %>% 
+  arrange(n) %>% 
+  pull(n, name = bi_lingual)
 
-waffle(
-  parts = c("Bi-lingual" = 37,"Not bi-lingual" = 63), 
-  colors = c("red", "grey"),
-  title = paste0("<strong>37%</strong> of the ", total_sessions, " online activities delivered during lockdown<br>were <span style='color:red'><strong>bi-lingual sessions</strong></span>"),
+bi_lingual_plot <- waffle(
+  parts = bi_lingual, 
+  colors = c("#066CE6", "#a0cbff", "grey"),
+  title = paste0("<strong>", bi_lingual["Te Reo Māori"], "%</strong> of the ", total_sessions, " online activities delivered during lockdown<br>were <span style='color:#066CE6'><strong>bi-lingual te reo Māori sessions</strong></span>, and a further <strong>", bi_lingual["Bi-lingual other"], "%</strong><br>were <span style='color:#a0cbff'><strong>other bi-lingual sessions</strong></span>"),
   xlab = "1 square = 1% of activities delivered during lockdown"
 ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
+
+ggsave("bi_lingual_sessions_waffle.png", plot = bi_lingual_plot, path = here::here("plots/online_lockdown"), bg = "white")
 
 online_sessions %>% 
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>%
@@ -349,7 +388,7 @@ sessions_participants_formats <- online_sessions %>%
   )) %>% 
   filter(format != "Pre-school activity")
 
-ggplot(sessions_participants_formats, aes(x=sessions, y=participants_per_format)) +
+sessions_participants_formats_plot <- ggplot(sessions_participants_formats, aes(x=sessions, y=participants_per_format)) +
   geom_point(size=3, color = sessions_participants_formats$color) +
   geom_text(label=sessions_participants_formats$format, vjust = -1.2, hjust = 0.6, color = sessions_participants_formats$color) +
   geom_vline(xintercept = max(sessions_participants_formats$sessions)/2, color = "blue") +
@@ -367,3 +406,5 @@ ggplot(sessions_participants_formats, aes(x=sessions, y=participants_per_format)
     x = "Sessions"
   ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
+
+ggsave("formats_scatterplot.png", plot = sessions_participants_formats_plot, path = here::here("plots/online_lockdown"))
