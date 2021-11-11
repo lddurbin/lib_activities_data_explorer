@@ -207,12 +207,17 @@ sessions_participants_plot <- ggplot(sessions_participants, aes(x=sessions, y=to
   theme(axis.title = element_text(size = 14)) +
   labs(
     title = "Whilst the Research Central team have delivered<br>to <span style='color:red'>lots of participants across relatively few<br>sessions</span>, other teams have delivered <span style='color:blue'>more <br>sessions to fewer participants</span>",
+    caption = "Number of online sessions recorded via the Programmes and Events form delivered after 17 August 2021",
     y = "Participants",
     x = "Sessions"
     ) +
   theme(plot.title = element_markdown(lineheight = 1.1))
 
 ggsave("sessions_participants_scatterplot.png", plot = sessions_participants_plot, path = here::here("plots/online_lockdown"), dpi = 300)
+
+
+
+# Sessions vs duration ----------------------------------------------------
 
 sessions_duration <- stats_per_library %>% 
   mutate(
@@ -241,7 +246,8 @@ sessions_duration_plot <- ggplot(sessions_duration, aes(x=sessions, y=total_dura
   ggthemes::theme_fivethirtyeight() +
   theme(axis.title = element_text(size = 14)) +
   labs(
-    title = "On the whole, the relationship between sessions\ndelivered and hours of delivery is as\nyou'd expect: the more sessions delivered, the more\nhours spent delierving them",
+    title = "On the whole, the relationship between sessions\ndelivered and hours of delivery is as\nyou'd expect: the more sessions delivered, the more\nhours spent delivering them",
+    caption = "Number of online sessions recorded via the Programmes and Events form delivered after 17 August 2021",
     y = "Hours of Delivery",
     x = "Sessions"
   )
@@ -249,17 +255,70 @@ sessions_duration_plot <- ggplot(sessions_duration, aes(x=sessions, y=total_dura
 ggsave("sessions_duration_scatterplot.png", plot = sessions_duration_plot, path = here::here("plots/online_lockdown"), dpi = 300)
 
 
+# Participation vs duration -----------------------------------------------
+
+participation_duration <- stats_per_library %>% 
+  mutate(
+    alpha = case_when(
+      total_duration >= 10 | total_participants > 70 ~ 1,
+      TRUE ~ 0
+    ),
+    color = case_when(
+      total_participants > max_participants/2 & total_duration < max_duration/2 ~ "red",
+      total_participants < max_participants/2 & total_duration > max_duration/2 ~ "blue",
+      TRUE ~ "black"
+    )
+  )
+
+participation_duration_plot <- ggplot(participation_duration, aes(x=total_duration, y=total_participants)) +
+  geom_point(size=3, color=participation_duration$color) +
+  geom_text(label=participation_duration$delivery_library_names, vjust = -1, hjust = 0, color = participation_duration$color, alpha = participation_duration$alpha) +
+  geom_vline(xintercept = max(participation_duration$total_duration)/2, color = "blue") +
+  geom_hline(yintercept = max(participation_duration$total_participants)/2, color = "blue") +
+  annotate("label", x = 10, y = 200, label = "More participants,\nless time spent delivering", fill = "white") +
+  annotate("label", x = 30, y =200, label = "More participants,\nmore time spent delivering", fill = "white") +
+  annotate("label", x = 10, y = 50, label = "Fewer participants,\nless time spent delivering", fill = "white") +
+  annotate("label", x = 30, y = 50, label = "Fewer participants,\nmore time spent delivering", fill = "white") +
+  scale_x_continuous(limits = c(-0,46), breaks = seq(0, 46, by = 5)) +
+  scale_y_continuous(limits = c(-2,275)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(axis.title = element_text(size = 14)) +
+  labs(
+    title = "With <span style='color:red'>one exception</span>, the relationship between<br>hours of delivery and participation is as you'd<br>expect: the more hours spent delivering<br>sessions, the higher the participation across them",
+    caption = "Number of online sessions recorded via the Programmes and Events form delivered after 17 August 2021",
+    y = "Total Participation",
+    x = "Hours of Delivery"
+  ) +
+  theme(plot.title = element_markdown(lineheight = 1.1))
+
+ggsave("participation_duration_scatterplot.png", plot = participation_duration_plot, path = here::here("plots/online_lockdown"), dpi = 300)
+
+
 # Age Groups --------------------------------------------------------------
 
 age_groups <- online_sessions %>%
   filter(as.Date(delivery_datetime) > ymd("2021-08-17")) %>% 
-  count(id, age_group) %>% 
-  count(age_group, name = "sessions") %>% 
+  distinct(id, age_group, duration = what_was_the_duration_of_the_session_to_the_nearest_half_an_hour, across(starts_with("how_many"))) %>% 
+  rowwise() %>% 
+  mutate(total_participants = sum(across(2:6), na.rm = TRUE), .keep = "unused") %>% 
+  ungroup() %>% 
   mutate(age_group = case_when(
     is.na(age_group) ~ "Designed for all ages",
     TRUE ~ age_group
   )) %>% 
-  mutate(age_group = factor(age_group, levels = c("Designed for all ages", "Seniors (65+)", "Adults (25-64)", "Youths (13-24)", "Primary school children (5-12)", "Pre-school children (under 5 years)")))
+  mutate(age_group = factor(age_group, levels = c("Designed for all ages", "Seniors (65+)", "Adults (25-64)", "Youths (13-24)", "Primary school children (5-12)", "Pre-school children (under 5 years)"))) %>% 
+  group_by(age_group) %>% 
+  summarise(sessions = n(), total_participants = sum(total_participants, na.rm = TRUE), total_duration = round(sum(duration, na.rm = TRUE)/60)) %>% 
+  mutate(max_participants = max(total_participants), max_sessions = max(sessions), max_duration = max(total_duration)) %>% 
+  mutate(
+    alpha = 1,
+    color = case_when(
+      sessions < max_sessions/2 & total_participants > max_participants/2 ~ "red",
+      sessions > max_sessions/2 & total_participants < max_participants/2 ~ "blue",
+      TRUE ~ "black"
+    )
+  )
+  
 
 age_groups_plot <- age_groups %>%
   ggplot(aes(x = forcats::fct_rev(age_group), y = sessions)) +
@@ -273,6 +332,29 @@ age_groups_plot <- age_groups %>%
   )
 
 ggsave("age_groups.png", plot = age_groups_plot, path = here::here("plots/online_lockdown"), dpi = 300)
+
+age_group_sessions_participation <- ggplot(age_groups, aes(x=sessions, y=total_participants)) +
+  geom_point(size=3, color=age_groups$color) +
+  geom_vline(xintercept = max(age_groups$sessions)/2, color = "blue") +
+  geom_hline(yintercept = max(age_groups$total_participants)/2, color = "blue") +
+  geom_text(label=age_groups$age_group, vjust = -1, hjust = 0, color = age_groups$color, alpha = age_groups$alpha) +
+  annotate("label", x = 20, y = 430, label = "Fewer sessions,\nless participation", fill = "white") +
+  annotate("label", x = 95, y = 800, label = "More sessions,\nhigher participation", fill = "white") +
+  annotate("label", x = 20, y = 800, label = "Fewer sessions,\nhigher participation", fill = "white") +
+  annotate("label", x = 95, y = 250, label = "More sessions,\nless participation", fill = "white") +
+  scale_x_continuous(limits = c(-5,119), breaks = seq(-5, 119, by = 10)) +
+  scale_y_continuous(limits = c(-2,1200)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(axis.title = element_text(size = 14)) +
+  labs(
+    title = "Participation across <span style='color:blue'>sessions designed for youths</span><br>is lower than expected relative to the number of<br>sessions delivered for that age group",
+    caption = "Number of online sessions recorded via the Programmes and Events form delivered after 17 August 2021",
+    y = "Total Participation",
+    x = "Total Sessions"
+  ) +
+  theme(plot.title = element_markdown(lineheight = 1.1))
+
+ggsave("age_group_sessions_participation.png", plot = age_group_sessions_participation, path = here::here("plots/online_lockdown"), dpi = 300)
 
 # External delivery -------------------------------------------------------
 
@@ -414,6 +496,7 @@ sessions_participants_formats_plot <- ggplot(sessions_participants_formats, aes(
   theme(axis.title = element_text(size = 14)) +
   labs(
     title = "Whilst the few <span style='color:red'>talks</span> delivered during lockdown were<br>viewed by many people, fewer people were reached<br>across the many more <span style='color:blue'>clubs</span> that were delivered",
+    caption = "Number of online sessions recorded via the Programmes and Events form delivered after 17 August 2021",
     y = "Participants",
     x = "Sessions"
   ) +
