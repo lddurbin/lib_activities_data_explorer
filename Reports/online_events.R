@@ -20,7 +20,7 @@ total_sessions <- online_sessions %>%
 
 # Number of sessions per month since 1 July 2021
 monthly_sessions <- online_sessions %>% 
-  filter(as.Date(delivery_datetime) < ymd("2021-12-01")) %>% 
+  filter(as.Date(delivery_datetime) < ymd("2022-02-01")) %>% 
   distinct(id, month = floor_date(as.Date(delivery_datetime), "months")) %>% 
   with_groups(month, summarise, online_sessions = n())
 
@@ -38,7 +38,7 @@ ggsave("online_sessions_per_month.png", plot = monthly_sessions_plot, path = her
 
 # Number of participants per month across online sessions recorded since 1 July 2021
 monthly_participants <- online_sessions %>% 
-  filter(as.Date(delivery_datetime) < ymd("2021-12-01")) %>% 
+  filter(as.Date(delivery_datetime) < ymd("2022-02-01")) %>% 
   distinct(id, delivery_datetime, across(ends_with("online_broadcast_of_this_session"))) %>% 
   rowwise() %>% 
   mutate(total_participants = sum(across(2:4), na.rm = TRUE), month = floor_date(as.Date(delivery_datetime), "months"), .keep = "unused") %>% 
